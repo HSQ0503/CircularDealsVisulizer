@@ -1,0 +1,146 @@
+// Prisma schema for AI Circular Deals
+// Models: Company, Deal, DealParty, Source
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum DealType {
+  INVESTMENT
+  CLOUD_COMMITMENT
+  SUPPLY
+  PARTNERSHIP
+  ACQUISITION
+  REVENUE_SHARE
+  OTHER
+}
+
+enum FlowType {
+  MONEY
+  COMPUTE_HARDWARE
+  SERVICE
+  EQUITY
+}
+
+enum PartyRole {
+  INVESTOR
+  INVESTEE
+  CUSTOMER
+  SUPPLIER
+  PARTNER
+  ACQUIRER
+  TARGET
+  OTHER
+}
+
+enum FlowDirection {
+  OUTFLOW  // Value/money leaves this party
+  INFLOW   // Value/money enters this party
+  NONE     // No directional flow (e.g., mutual partnership)
+}
+
+enum SourceType {
+  SEC_FILING
+  PRESS_RELEASE
+  EARNINGS_CALL
+  NEWS
+  BLOG
+  OTHER
+}
+
+enum DataStatus {
+  CONFIRMED
+  ESTIMATED
+  RUMORED
+  UNKNOWN
+}
+
+// ============================================================================
+// MODELS
+// ============================================================================
+
+model Company {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  ticker      String?
+  description String?
+  websiteUrl  String?
+  logoUrl     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  dealParties DealParty[]
+
+  @@index([slug])
+}
+
+model Deal {
+  id           String     @id @default(cuid())
+  title        String
+  summary      String
+  dealType     DealType
+  flowType     FlowType   @default(MONEY)
+  announcedAt  DateTime
+  
+  // Amount fields - flexible for various scenarios
+  amountUSD    Decimal?   @db.Decimal(20, 2)  // Exact amount if known
+  amountUSDMin Decimal?   @db.Decimal(20, 2)  // Range minimum
+  amountUSDMax Decimal?   @db.Decimal(20, 2)  // Range maximum
+  amountText   String?                         // Human-readable ("up to $100B", "undisclosed")
+  dataStatus   DataStatus @default(UNKNOWN)
+  
+  tags         String[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  parties DealParty[]
+  sources Source[]
+
+  @@index([dealType])
+  @@index([flowType])
+  @@index([announcedAt])
+}
+
+model DealParty {
+  id        String        @id @default(cuid())
+  dealId    String
+  companyId String
+  role      PartyRole
+  direction FlowDirection
+  notes     String?
+
+  deal    Deal    @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([dealId])
+  @@index([companyId])
+  @@index([role])
+}
+
+model Source {
+  id          String     @id @default(cuid())
+  dealId      String
+  sourceType  SourceType
+  publisher   String
+  url         String
+  publishedAt DateTime?
+  excerpt     String?
+  reliability Int        @default(3) // 1-5
+  confidence  Int        @default(3) // 1-5
+  createdAt   DateTime   @default(now())
+
+  deal Deal @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@index([dealId])
+}
