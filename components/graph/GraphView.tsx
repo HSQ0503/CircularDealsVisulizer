@@ -2,7 +2,6 @@
 
 import { useRef, useCallback, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { forceCollide } from 'd3-force';
 import type { NodeDTO, EdgeDTO } from '@/lib/graph/types';
 
 // Dynamically import ForceGraph2D to avoid SSR issues
@@ -23,6 +22,19 @@ interface GraphViewProps {
   onNodeClick: (node: NodeDTO) => void;
   onEdgeClick: (edge: EdgeDTO) => void;
   onBackgroundClick: () => void;
+}
+
+// Tooltip state interface
+interface TooltipState {
+  visible: boolean;
+  x: number;
+  y: number;
+  content: {
+    flowType: string;
+    amount: string;
+    from: string;
+    to: string;
+  } | null;
 }
 
 interface GraphNode {
@@ -54,11 +66,46 @@ const flowColors: Record<string, string> = {
   EQUITY: '#A78BFA',
 };
 
+const flowLabels: Record<string, string> = {
+  MONEY: 'Money',
+  COMPUTE_HARDWARE: 'Compute Hardware',
+  SERVICE: 'Service',
+  EQUITY: 'Equity',
+};
+
 const nodeColors: Record<string, string> = {
   openai: '#10B981',
   microsoft: '#3B82F6',
   nvidia: '#84CC16',
 };
+
+// Format currency amount
+function formatAmount(amount: number | null): string {
+  if (!amount) return 'Undisclosed';
+  if (amount >= 1e12) return `$${(amount / 1e12).toFixed(1)}T`;
+  if (amount >= 1e9) return `$${(amount / 1e9).toFixed(1)}B`;
+  if (amount >= 1e6) return `$${(amount / 1e6).toFixed(1)}M`;
+  return `$${amount.toLocaleString()}`;
+}
+
+// Color manipulation helpers
+function lightenColor(hex: string, percent: number): string {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const amt = Math.round(2.55 * percent);
+  const R = Math.min(255, (num >> 16) + amt);
+  const G = Math.min(255, ((num >> 8) & 0x00FF) + amt);
+  const B = Math.min(255, (num & 0x0000FF) + amt);
+  return `#${(1 << 24 | R << 16 | G << 8 | B).toString(16).slice(1)}`;
+}
+
+function darkenColor(hex: string, percent: number): string {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const amt = Math.round(2.55 * percent);
+  const R = Math.max(0, (num >> 16) - amt);
+  const G = Math.max(0, ((num >> 8) & 0x00FF) - amt);
+  const B = Math.max(0, (num & 0x0000FF) - amt);
+  return `#${(1 << 24 | R << 16 | G << 8 | B).toString(16).slice(1)}`;
+}
 
 export function GraphView({
   nodes,
@@ -72,6 +119,13 @@ export function GraphView({
   const graphRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
+  const [hoveredLinkId, setHoveredLinkId] = useState<string | null>(null);
+  const [tooltip, setTooltip] = useState<TooltipState>({
+    visible: false,
+    x: 0,
+    y: 0,
+    content: null,
+  });
 
   // Update dimensions on resize
   useEffect(() => {
@@ -89,25 +143,28 @@ export function GraphView({
     return () => window.removeEventListener('resize', updateDimensions);
   }, []);
 
-  // Prepare graph data with initial positions spread out
+  // Fixed positions for stable triangle layout
   const positions: Record<string, { x: number; y: number }> = {
-    openai: { x: 0, y: -150 },      // Top
-    microsoft: { x: -150, y: 100 }, // Bottom left
-    nvidia: { x: 150, y: 100 },     // Bottom right
+    openai: { x: 0, y: -200 },      // Top
+    microsoft: { x: -250, y: 150 }, // Bottom left
+    nvidia: { x: 250, y: 150 },     // Bottom right
   };
 
-  const graphNodes: GraphNode[] = nodes.map(node => ({
-    id: node.id,
-    name: node.name,
-    slug: node.slug,
-    val: 30,
-    color: nodeColors[node.slug] || '#4C8DFF',
-    // Set initial positions
-    fx: undefined, // Don't fix position, just initial
-    fy: undefined,
-    x: positions[node.slug]?.x || 0,
-    y: positions[node.slug]?.y || 0,
-  }));
+  const graphNodes: GraphNode[] = nodes.map(node => {
+    const pos = positions[node.slug] || { x: 0, y: 0 };
+    return {
+      id: node.id,
+      name: node.name,
+      slug: node.slug,
+      val: 30,
+      color: nodeColors[node.slug] || '#4C8DFF',
+      // Fix positions so nodes don't move
+      fx: pos.x,
+      fy: pos.y,
+      x: pos.x,
+      y: pos.y,
+    };
+  });
 
   // Handle multiple edges between same nodes with curvature
   const edgePairs = new Map<string, number>();
@@ -125,102 +182,104 @@ export function GraphView({
       target: edge.to,
       edgeData: edge,
       color: flowColors[edge.flowType] || '#4C8DFF',
-      width: edge.totalAmountUSD ? Math.min(Math.log10(edge.totalAmountUSD / 1e9) + 3, 8) : 3,
+      width: edge.totalAmountUSD ? Math.min(Math.log10(edge.totalAmountUSD / 1e9) + 4, 10) : 4,
       curvature,
     };
   });
 
   const graphData = { nodes: graphNodes, links: graphLinks };
 
-  // Node canvas rendering
-  const paintNode = useCallback((node: GraphNode, ctx: CanvasRenderingContext2D, globalScale: number) => {
-    const isSelected = node.id === selectedNodeId;
-    const label = node.name;
+  // Node canvas rendering with improved design
+  const paintNode = useCallback((node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
+    const n = node as GraphNode;
+    const isSelected = n.id === selectedNodeId;
+    const label = n.name;
     const fontSize = 14 / globalScale;
-    const nodeRadius = 35;
+    const nodeRadius = 40;
+    const x = n.x || 0;
+    const y = n.y || 0;
 
-    // Node circle
+    // Outer glow (always visible, stronger when selected)
+    const glowRadius = nodeRadius + (isSelected ? 20 : 12);
+    const glowGradient = ctx.createRadialGradient(x, y, nodeRadius * 0.8, x, y, glowRadius);
+    glowGradient.addColorStop(0, n.color + (isSelected ? '60' : '30'));
+    glowGradient.addColorStop(1, n.color + '00');
     ctx.beginPath();
-    ctx.arc(node.x || 0, node.y || 0, nodeRadius, 0, 2 * Math.PI);
-    
-    if (isSelected) {
-      ctx.fillStyle = node.color;
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 3 / globalScale;
-      ctx.fill();
-      ctx.stroke();
-    } else {
-      ctx.fillStyle = node.color;
-      ctx.fill();
-    }
+    ctx.arc(x, y, glowRadius, 0, 2 * Math.PI);
+    ctx.fillStyle = glowGradient;
+    ctx.fill();
 
-    // Glow effect for selected
+    // Main node circle with gradient
+    const mainGradient = ctx.createRadialGradient(
+      x - nodeRadius * 0.3, y - nodeRadius * 0.3, 0,
+      x, y, nodeRadius
+    );
+    mainGradient.addColorStop(0, lightenColor(n.color, 30));
+    mainGradient.addColorStop(0.7, n.color);
+    mainGradient.addColorStop(1, darkenColor(n.color, 20));
+
+    ctx.beginPath();
+    ctx.arc(x, y, nodeRadius, 0, 2 * Math.PI);
+    ctx.fillStyle = mainGradient;
+    ctx.fill();
+
+    // Inner highlight (top-left shine)
+    const highlightGradient = ctx.createRadialGradient(
+      x - nodeRadius * 0.4, y - nodeRadius * 0.4, 0,
+      x - nodeRadius * 0.2, y - nodeRadius * 0.2, nodeRadius * 0.6
+    );
+    highlightGradient.addColorStop(0, 'rgba(255, 255, 255, 0.4)');
+    highlightGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.beginPath();
+    ctx.arc(x, y, nodeRadius, 0, 2 * Math.PI);
+    ctx.fillStyle = highlightGradient;
+    ctx.fill();
+
+    // Border ring
+    ctx.beginPath();
+    ctx.arc(x, y, nodeRadius, 0, 2 * Math.PI);
+    ctx.strokeStyle = isSelected ? '#ffffff' : 'rgba(255, 255, 255, 0.2)';
+    ctx.lineWidth = (isSelected ? 3 : 1.5) / globalScale;
+    ctx.stroke();
+
+    // Selection ring
     if (isSelected) {
       ctx.beginPath();
-      ctx.arc(node.x || 0, node.y || 0, nodeRadius + 8, 0, 2 * Math.PI);
-      ctx.strokeStyle = node.color + '40';
-      ctx.lineWidth = 6 / globalScale;
+      ctx.arc(x, y, nodeRadius + 6, 0, 2 * Math.PI);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2 / globalScale;
+      ctx.setLineDash([4 / globalScale, 4 / globalScale]);
       ctx.stroke();
+      ctx.setLineDash([]);
     }
 
-    // Label
-    ctx.font = `${isSelected ? 'bold' : 'normal'} ${fontSize}px system-ui, sans-serif`;
+    // Label with shadow for better readability
+    ctx.font = `${isSelected ? '600' : '500'} ${fontSize}px system-ui, -apple-system, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#E6EDF3';
-    ctx.fillText(label, node.x || 0, (node.y || 0) + nodeRadius + fontSize + 4);
+
+    // Text shadow
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.fillText(label, x + 1, y + nodeRadius + fontSize + 6);
+
+    // Main text
+    ctx.fillStyle = isSelected ? '#ffffff' : '#E6EDF3';
+    ctx.fillText(label, x, y + nodeRadius + fontSize + 5);
   }, [selectedNodeId]);
 
-  // Link rendering
-  const paintLink = useCallback((link: GraphLink, ctx: CanvasRenderingContext2D, globalScale: number) => {
-    const isSelected = link.id === selectedEdgeId;
-    
-    ctx.strokeStyle = isSelected ? '#fff' : link.color;
-    ctx.lineWidth = (isSelected ? link.width + 2 : link.width) / globalScale;
-    ctx.globalAlpha = isSelected ? 1 : 0.7;
-
-    // Draw arrow
-    const source = link.source as unknown as { x: number; y: number };
-    const target = link.target as unknown as { x: number; y: number };
-    
-    if (source?.x !== undefined && target?.x !== undefined) {
-      const dx = target.x - source.x;
-      const dy = target.y - source.y;
-      const angle = Math.atan2(dy, dx);
-      
-      // Arrow at target
-      const arrowLength = 12 / globalScale;
-      const arrowX = target.x - Math.cos(angle) * 40; // Offset from node
-      const arrowY = target.y - Math.sin(angle) * 40;
-      
-      ctx.beginPath();
-      ctx.moveTo(arrowX, arrowY);
-      ctx.lineTo(
-        arrowX - arrowLength * Math.cos(angle - Math.PI / 6),
-        arrowY - arrowLength * Math.sin(angle - Math.PI / 6)
-      );
-      ctx.moveTo(arrowX, arrowY);
-      ctx.lineTo(
-        arrowX - arrowLength * Math.cos(angle + Math.PI / 6),
-        arrowY - arrowLength * Math.sin(angle + Math.PI / 6)
-      );
-      ctx.stroke();
-    }
-    
-    ctx.globalAlpha = 1;
-  }, [selectedEdgeId]);
-
   // Handle node click
-  const handleNodeClick = useCallback((node: GraphNode) => {
-    const originalNode = nodes.find(n => n.id === node.id);
+  const handleNodeClick = useCallback((node: any) => {
+    const n = node as GraphNode;
+    const originalNode = nodes.find(nd => nd.id === n.id);
     if (originalNode) {
       onNodeClick(originalNode);
     }
   }, [nodes, onNodeClick]);
 
   // Handle link click
-  const handleLinkClick = useCallback((link: GraphLink) => {
-    onEdgeClick(link.edgeData);
+  const handleLinkClick = useCallback((link: any) => {
+    const l = link as GraphLink;
+    onEdgeClick(l.edgeData);
   }, [onEdgeClick]);
 
   // Handle background click
@@ -228,37 +287,147 @@ export function GraphView({
     onBackgroundClick();
   }, [onBackgroundClick]);
 
-  // Configure forces on mount
+  // Handle link hover
+  const handleLinkHover = useCallback((link: any, prevLink: any) => {
+    if (link) {
+      const l = link as GraphLink;
+      setHoveredLinkId(l.id);
+
+      // Get source and target node names
+      const sourceNode = nodes.find(n => n.id === l.edgeData.from);
+      const targetNode = nodes.find(n => n.id === l.edgeData.to);
+
+      setTooltip({
+        visible: true,
+        x: 0, // Will be updated by mouse move
+        y: 0,
+        content: {
+          flowType: flowLabels[l.edgeData.flowType] || l.edgeData.flowType,
+          amount: formatAmount(l.edgeData.totalAmountUSD),
+          from: sourceNode?.name || 'Unknown',
+          to: targetNode?.name || 'Unknown',
+        },
+      });
+    } else {
+      setHoveredLinkId(null);
+      setTooltip(prev => ({ ...prev, visible: false }));
+    }
+  }, [nodes]);
+
+  // Track mouse position for tooltip
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (tooltip.visible && containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setTooltip(prev => ({
+          ...prev,
+          x: e.clientX - rect.left + 15,
+          y: e.clientY - rect.top + 15,
+        }));
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [tooltip.visible]);
+
+  // Custom link canvas rendering with hover/selection effects
+  const paintLink = useCallback((link: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
+    const l = link as GraphLink;
+    const isHovered = l.id === hoveredLinkId;
+    const isSelected = l.id === selectedEdgeId;
+
+    // Get source and target positions
+    const source = typeof l.source === 'object' ? l.source : graphNodes.find(n => n.id === l.source);
+    const target = typeof l.target === 'object' ? l.target : graphNodes.find(n => n.id === l.target);
+
+    if (!source || !target) return;
+
+    const sx = source.x || 0;
+    const sy = source.y || 0;
+    const tx = target.x || 0;
+    const ty = target.y || 0;
+
+    // Calculate control point for curved link
+    const midX = (sx + tx) / 2;
+    const midY = (sy + ty) / 2;
+    const dx = tx - sx;
+    const dy = ty - sy;
+    const normalX = -dy * l.curvature;
+    const normalY = dx * l.curvature;
+    const cpX = midX + normalX;
+    const cpY = midY + normalY;
+
+    // Draw glow effect for hovered/selected links
+    if (isHovered || isSelected) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.quadraticCurveTo(cpX, cpY, tx, ty);
+      ctx.strokeStyle = l.color;
+      ctx.lineWidth = (l.width + 12) / globalScale;
+      ctx.globalAlpha = 0.3;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Draw main link
+    ctx.beginPath();
+    ctx.moveTo(sx, sy);
+    ctx.quadraticCurveTo(cpX, cpY, tx, ty);
+    ctx.strokeStyle = l.color;
+    ctx.lineWidth = (isHovered || isSelected ? l.width + 2 : l.width) / globalScale;
+    ctx.globalAlpha = isHovered || isSelected ? 1 : 0.8;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    // Draw arrow
+    const arrowPos = 0.65;
+    const t = arrowPos;
+    const arrowX = (1-t)*(1-t)*sx + 2*(1-t)*t*cpX + t*t*tx;
+    const arrowY = (1-t)*(1-t)*sy + 2*(1-t)*t*cpY + t*t*ty;
+
+    // Calculate arrow direction (tangent at arrow position)
+    const tangentX = 2*(1-t)*(cpX-sx) + 2*t*(tx-cpX);
+    const tangentY = 2*(1-t)*(cpY-sy) + 2*t*(ty-cpY);
+    const angle = Math.atan2(tangentY, tangentX);
+
+    const arrowLength = (isHovered || isSelected ? 28 : 25) / globalScale;
+    const arrowWidth = arrowLength * 0.5;
+
+    ctx.save();
+    ctx.translate(arrowX, arrowY);
+    ctx.rotate(angle);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-arrowLength, arrowWidth / 2);
+    ctx.lineTo(-arrowLength, -arrowWidth / 2);
+    ctx.closePath();
+    ctx.fillStyle = l.color;
+    ctx.fill();
+    ctx.restore();
+  }, [hoveredLinkId, selectedEdgeId, graphNodes]);
+
+  // Zoom to fit on mount (nodes are fixed, no simulation needed)
   useEffect(() => {
     const fg = graphRef.current;
     if (!fg) return;
     
-    // Wait for graph to initialize
+    // Disable forces since nodes are fixed
+    fg.d3Force('charge', null);
+    fg.d3Force('center', null);
+    fg.d3Force('collision', null);
+    
+    // Zoom to fit after a short delay
     const timer = setTimeout(() => {
-      // Very strong repulsion to push nodes apart
-      fg.d3Force('charge')?.strength(-3000);
-      
-      // Long link distance
-      fg.d3Force('link')?.distance(300);
-      
-      // Collision detection with large radius
-      fg.d3Force('collision', forceCollide().radius(80));
-      
-      // Weak center force
-      fg.d3Force('center')?.strength(0.02);
-      
-      // Reheat
-      fg.d3ReheatSimulation();
-      
-      // Zoom to fit after settling
-      setTimeout(() => fg.zoomToFit(500, 100), 2000);
-    }, 100);
+      fg.zoomToFit(400, 100);
+    }, 300);
     
     return () => clearTimeout(timer);
   }, []);
 
   return (
-    <div ref={containerRef} className="w-full h-full graph-container">
+    <div ref={containerRef} className="w-full h-full graph-container relative">
       <ForceGraph2D
         ref={graphRef}
         graphData={graphData}
@@ -266,33 +435,84 @@ export function GraphView({
         height={dimensions.height}
         backgroundColor="transparent"
         nodeCanvasObject={paintNode}
-        nodePointerAreaPaint={(node: GraphNode, color: string, ctx: CanvasRenderingContext2D) => {
+        nodePointerAreaPaint={(node: any, color: string, ctx: CanvasRenderingContext2D) => {
           ctx.beginPath();
-          ctx.arc(node.x || 0, node.y || 0, 40, 0, 2 * Math.PI);
+          ctx.arc(node.x || 0, node.y || 0, 45, 0, 2 * Math.PI);
           ctx.fillStyle = color;
           ctx.fill();
         }}
-        linkColor={(link: GraphLink) => link.color}
-        linkWidth={(link: GraphLink) => link.width}
-        linkCurvature={(link: GraphLink) => link.curvature}
-        linkDirectionalArrowLength={12}
-        linkDirectionalArrowRelPos={0.75}
-        linkDirectionalArrowColor={(link: GraphLink) => link.color}
+        linkCanvasObject={paintLink}
+        linkPointerAreaPaint={(link: any, color: string, ctx: CanvasRenderingContext2D) => {
+          // Create a much larger clickable area along the curved path
+          const l = link as GraphLink;
+          const source = typeof l.source === 'object' ? l.source : graphNodes.find(n => n.id === l.source);
+          const target = typeof l.target === 'object' ? l.target : graphNodes.find(n => n.id === l.target);
+
+          if (!source || !target) return;
+
+          const sx = source.x || 0;
+          const sy = source.y || 0;
+          const tx = target.x || 0;
+          const ty = target.y || 0;
+
+          // Calculate control point for curved link
+          const midX = (sx + tx) / 2;
+          const midY = (sy + ty) / 2;
+          const dx = tx - sx;
+          const dy = ty - sy;
+          const normalX = -dy * l.curvature;
+          const normalY = dx * l.curvature;
+          const cpX = midX + normalX;
+          const cpY = midY + normalY;
+
+          // Draw a thick invisible line for pointer detection
+          ctx.beginPath();
+          ctx.moveTo(sx, sy);
+          ctx.quadraticCurveTo(cpX, cpY, tx, ty);
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 20; // Much larger hit area
+          ctx.stroke();
+        }}
+        linkCurvature={(link: any) => (link as GraphLink).curvature}
         onNodeClick={handleNodeClick}
         onLinkClick={handleLinkClick}
+        onLinkHover={handleLinkHover}
         onBackgroundClick={handleBackgroundClick}
-        cooldownTicks={200}
-        d3VelocityDecay={0.2}
-        d3AlphaDecay={0.01}
-        d3AlphaMin={0.001}
-        dagMode={undefined}
-        dagLevelDistance={150}
-        onEngineStop={() => graphRef.current?.zoomToFit(400, 80)}
-        minZoom={0.5}
+        cooldownTicks={0}
+        d3VelocityDecay={1}
+        d3AlphaDecay={1}
+        warmupTicks={0}
+        minZoom={0.3}
         maxZoom={4}
         nodeRelSize={8}
-        linkLineDash={(link: GraphLink) => selectedEdgeId === link.id ? [] : []}
+        enableNodeDrag={false}
       />
+
+      {/* Tooltip */}
+      {tooltip.visible && tooltip.content && (
+        <div
+          className="absolute pointer-events-none z-50 bg-bg-secondary/95 backdrop-blur-sm border border-border-default rounded-lg px-3 py-2 shadow-xl"
+          style={{
+            left: tooltip.x,
+            top: tooltip.y,
+            transform: tooltip.x > dimensions.width - 200 ? 'translateX(-110%)' : 'none',
+          }}
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <div
+              className="w-3 h-3 rounded-full"
+              style={{ backgroundColor: flowColors[Object.keys(flowLabels).find(k => flowLabels[k] === tooltip.content!.flowType) || ''] }}
+            />
+            <span className="text-sm font-medium text-text-primary">{tooltip.content.flowType}</span>
+          </div>
+          <div className="text-xs text-text-muted">
+            {tooltip.content.from} → {tooltip.content.to}
+          </div>
+          <div className="text-sm font-semibold text-text-primary mt-1">
+            {tooltip.content.amount}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

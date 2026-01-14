@@ -265,3 +265,20 @@ h4 { font-size: 1rem; }
 .graph-container canvas {
   display: block;
 }
+
+/* Tooltip animations */
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.graph-container [class*="tooltip"],
+.graph-container .absolute.pointer-events-none {
+  animation: tooltipFadeIn 0.15s ease-out;
+}

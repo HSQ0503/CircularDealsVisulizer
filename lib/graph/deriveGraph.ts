@@ -4,7 +4,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
-import { DealType, FlowType, FlowDirection, PartyRole } from '@prisma/client';
+import { DealType, FlowType, FlowDirection, PartyRole, Prisma } from '@prisma/client';
 import type { GraphResponse, NodeDTO, EdgeDTO, DealDTO, GraphFilters } from './types';
 
 // ============================================================================
@@ -31,7 +31,7 @@ export async function deriveGraph(
   const companyMap = new Map(companies.map(c => [c.id, c]));
 
   // Build deal query with filters
-  const dealWhere: Parameters<typeof prisma.deal.findMany>[0]['where'] = {
+  const dealWhere: Prisma.DealWhereInput = {
     parties: {
       some: { companyId: { in: companyIds } },
     },
