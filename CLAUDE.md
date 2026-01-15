@@ -129,3 +129,134 @@ Never mark a task as complete until you verify it works.
 3. Check for proper error handling
 
 Do not tell me "done" until verification passes. If something fails, fix it and verify again.
+
+## Adding Companies & Deals
+
+This section explains how to add new companies and deals to the visualization.
+
+### Current Companies (as of Jan 2025)
+
+| Slug | Name | Color |
+|------|------|-------|
+| `openai` | OpenAI | `#10B981` (green) |
+| `microsoft` | Microsoft | `#3B82F6` (blue) |
+| `nvidia` | NVIDIA | `#84CC16` (lime) |
+| `meta` | Meta | `#0668E1` (meta blue) |
+| `coreweave` | CoreWeave | `#7C3AED` (purple) |
+| `scale-ai` | Scale AI | `#E11D48` (rose) |
+
+### Step 1: Add a New Company
+
+Add to `COMPANIES` array in `prisma/seed.ts`:
+
+```typescript
+{
+  slug: 'company-slug',        // lowercase, hyphens (used in URLs and nodeColors)
+  name: 'Company Name',
+  ticker: 'TICK',              // optional, for public companies
+  description: 'Brief description of the company',
+  websiteUrl: 'https://company.com',
+  logoUrl: '/logos/company.svg',  // optional
+},
+```
+
+### Step 2: Add Node Color
+
+Add to `nodeColors` in `components/graph/GraphView.tsx`:
+
+```typescript
+const nodeColors: Record<string, string> = {
+  // ... existing colors
+  'company-slug': '#HEX_COLOR',  // use slug as key, pick distinct color
+};
+```
+
+### Step 3: Add a Deal
+
+Add to `DEALS` array in `prisma/seed.ts`:
+
+```typescript
+{
+  slug: 'company-a-company-b-type-year',  // unique identifier
+  title: 'Deal Title',
+  summary: 'Detailed description of the deal...',
+  dealType: DealType.INVESTMENT,          // see enum below
+  flowType: FlowType.MONEY,               // see enum below
+  announcedAt: new Date('YYYY-MM-DD'),
+  amountUSD: 1_000_000_000,               // optional, use underscores
+  amountText: '$1 billion description',   // human-readable
+  dataStatus: DataStatus.CONFIRMED,       // or ESTIMATED
+  tags: ['tag1', 'tag2'],
+  parties: [
+    { companySlug: 'company-a', role: PartyRole.INVESTOR, direction: FlowDirection.OUTFLOW },
+    { companySlug: 'company-b', role: PartyRole.INVESTEE, direction: FlowDirection.INFLOW },
+  ],
+  sources: [
+    {
+      sourceType: SourceType.NEWS,
+      publisher: 'Publisher Name',
+      url: 'https://source-url.com',
+      publishedAt: new Date('YYYY-MM-DD'),
+      excerpt: 'Brief quote from source',
+      reliability: 5,  // 1-5 scale
+      confidence: 5,   // 1-5 scale
+    },
+  ],
+},
+```
+
+### Enum Reference
+
+**DealType:**
+- `INVESTMENT` - Equity investment
+- `CLOUD_COMMITMENT` - Cloud services contract
+- `SUPPLY` - Hardware/product supply agreement
+- `PARTNERSHIP` - Strategic partnership (often bidirectional)
+- `ACQUISITION` - Company acquisition
+- `REVENUE_SHARE` - Revenue sharing arrangement
+
+**FlowType:**
+- `MONEY` - Cash/investment
+- `COMPUTE_HARDWARE` - GPUs, chips, servers
+- `SERVICE` - Cloud services, SaaS
+- `EQUITY` - Stock/ownership
+
+**PartyRole & FlowDirection Patterns:**
+
+| Role | Direction | Description |
+|------|-----------|-------------|
+| `INVESTOR` | `OUTFLOW` | Money flows out to investee |
+| `INVESTEE` | `INFLOW` | Money flows in from investor |
+| `CUSTOMER` | `OUTFLOW` | Payment flows out to supplier |
+| `SUPPLIER` | `INFLOW` | Payment flows in from customer |
+| `PARTNER` | `NONE` | Bidirectional, no directed flow |
+| `ACQUIRER` | `OUTFLOW` | Money flows out to target |
+| `TARGET` | `INFLOW` | Money flows in from acquirer |
+
+**SourceType:**
+- `NEWS` - News articles (CNBC, Reuters, Bloomberg)
+- `PRESS_RELEASE` - Official company announcements
+- `SEC_FILING` - SEC filings (10-K, 8-K, S-1)
+- `BLOG` - Company blogs
+
+**DataStatus:**
+- `CONFIRMED` - Officially announced with specific numbers
+- `ESTIMATED` - Reported but not officially confirmed
+
+### Step 4: Verify Changes
+
+```bash
+npm run build        # Must compile without errors
+npx prisma db seed   # Seed the database
+```
+
+Then check http://localhost:3000/graph to see new nodes/edges.
+
+### Research Tips for Finding Deals
+
+When researching deals between AI companies:
+1. Search for "[Company A] [Company B] investment/partnership/deal"
+2. Look for official sources: press releases, SEC filings, company blogs
+3. Verify amounts and dates from multiple sources
+4. Note if numbers are confirmed vs estimated
+5. Include source URLs for citations

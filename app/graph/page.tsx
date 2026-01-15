@@ -92,7 +92,7 @@ export default function GraphPage() {
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-bg">
       {/* Header */}
-      <header className="flex-shrink-0 h-16 border-b border-border-subtle bg-surface/80 backdrop-blur-sm flex items-center justify-between px-6">
+      <header className="flex-shrink-0 h-16 border-b border-border-subtle bg-surface/80 backdrop-blur-sm flex items-center justify-between px-6 relative z-20">
         {/* Brand */}
         <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
           <span className="text-lg font-bold text-gradient">AI Circular Deals</span>

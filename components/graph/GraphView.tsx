@@ -77,6 +77,9 @@ const nodeColors: Record<string, string> = {
   openai: '#10B981',
   microsoft: '#3B82F6',
   nvidia: '#84CC16',
+  meta: '#0668E1',
+  coreweave: '#7C3AED',
+  'scale-ai': '#E11D48',
 };
 
 // Format currency amount
@@ -105,6 +108,22 @@ function darkenColor(hex: string, percent: number): string {
   const G = Math.max(0, ((num >> 8) & 0x00FF) - amt);
   const B = Math.max(0, (num & 0x0000FF) - amt);
   return `#${(1 << 24 | R << 16 | G << 8 | B).toString(16).slice(1)}`;
+}
+
+// Add alpha to any color format (hex or HSL)
+function colorWithAlpha(color: string, alphaHex: string): string {
+  // Convert hex alpha (00-FF) to decimal (0-1)
+  const alpha = parseInt(alphaHex, 16) / 255;
+
+  if (color.startsWith('hsl')) {
+    // Convert hsl(h, s%, l%) to hsla(h, s%, l%, a)
+    const match = color.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/);
+    if (match) {
+      return `hsla(${match[1]}, ${match[2]}%, ${match[3]}%, ${alpha.toFixed(2)})`;
+    }
+  }
+  // For hex colors, just append the alpha
+  return color + alphaHex;
 }
 
 export function GraphView({
@@ -193,15 +212,36 @@ export function GraphView({
     };
   });
 
-  // Handle multiple edges between same nodes with curvature
-  const edgePairs = new Map<string, number>();
+  // Handle multiple edges between same nodes with proper fan-out
+  // First pass: count edges per node pair (both directions)
+  const pairCounts = new Map<string, number>();
+  edges.forEach(edge => {
+    const pairKey = [edge.from, edge.to].sort().join('--');
+    pairCounts.set(pairKey, (pairCounts.get(pairKey) || 0) + 1);
+  });
+
+  // Second pass: assign curvatures with proper spread
+  const pairIndices = new Map<string, number>();
   const graphLinks: GraphLink[] = edges.map(edge => {
-    const pairKey = [edge.from, edge.to].sort().join('-');
-    const count = edgePairs.get(pairKey) || 0;
-    edgePairs.set(pairKey, count + 1);
-    
-    // Alternate curvature direction for multiple edges
-    const curvature = count === 0 ? 0.2 : count % 2 === 0 ? 0.3 : -0.3;
+    const pairKey = [edge.from, edge.to].sort().join('--');
+    const totalEdges = pairCounts.get(pairKey) || 1;
+    const currentIndex = pairIndices.get(pairKey) || 0;
+    pairIndices.set(pairKey, currentIndex + 1);
+
+    // Spread edges evenly: -0.4 to +0.4 range
+    let curvature: number;
+    if (totalEdges === 1) {
+      curvature = 0.2;
+    } else {
+      // Spread from -0.4 to 0.4 based on index
+      const spread = 0.8; // Total range
+      const step = spread / (totalEdges - 1);
+      curvature = -0.4 + (currentIndex * step);
+      // Flip direction for reverse edges to keep them on their side
+      if (edge.from > edge.to) {
+        curvature = -curvature;
+      }
+    }
 
     return {
       id: edge.id,
@@ -229,8 +269,8 @@ export function GraphView({
     // Outer glow (always visible, stronger when selected)
     const glowRadius = nodeRadius + (isSelected ? 20 : 12);
     const glowGradient = ctx.createRadialGradient(x, y, nodeRadius * 0.8, x, y, glowRadius);
-    glowGradient.addColorStop(0, n.color + (isSelected ? '60' : '30'));
-    glowGradient.addColorStop(1, n.color + '00');
+    glowGradient.addColorStop(0, colorWithAlpha(n.color, isSelected ? '60' : '30'));
+    glowGradient.addColorStop(1, colorWithAlpha(n.color, '00'));
     ctx.beginPath();
     ctx.arc(x, y, glowRadius, 0, 2 * Math.PI);
     ctx.fillStyle = glowGradient;
