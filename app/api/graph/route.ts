@@ -1,8 +1,9 @@
 /**
  * Graph API Route
- * 
- * GET /api/graph?caseStudy=triangle&flowTypes=MONEY,SERVICE&minConfidence=3
- * 
+ *
+ * GET /api/graph?companies=openai,microsoft,nvidia&flowTypes=MONEY,SERVICE&minConfidence=3
+ * GET /api/graph?companies=all  (shows all companies)
+ *
  * Returns nodes, edges, and deal details for visualization
  */
 
@@ -14,22 +15,26 @@ import type { GraphFilters } from '@/lib/graph/types';
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    
-    const caseStudy = searchParams.get('caseStudy') || 'triangle';
-    
+
+    // Parse companies parameter - comma-separated slugs or 'all'
+    const companiesParam = searchParams.get('companies');
+    const companySlugs: string[] | 'all' = !companiesParam || companiesParam === 'all'
+      ? 'all'
+      : companiesParam.split(',').map(s => s.trim()).filter(Boolean);
+
     // Parse filters
     const filters: GraphFilters = {};
 
     const dealTypesParam = searchParams.get('dealTypes');
     if (dealTypesParam) {
-      filters.dealTypes = dealTypesParam.split(',').filter(t => 
+      filters.dealTypes = dealTypesParam.split(',').filter(t =>
         Object.values(DealType).includes(t as DealType)
       ) as DealType[];
     }
 
     const flowTypesParam = searchParams.get('flowTypes');
     if (flowTypesParam) {
-      filters.flowTypes = flowTypesParam.split(',').filter(t => 
+      filters.flowTypes = flowTypesParam.split(',').filter(t =>
         Object.values(FlowType).includes(t as FlowType)
       ) as FlowType[];
     }
@@ -49,7 +54,7 @@ export async function GET(request: NextRequest) {
       filters.dateTo = dateTo;
     }
 
-    const graphData = await deriveGraph(caseStudy, filters);
+    const graphData = await deriveGraph(companySlugs, filters);
 
     return NextResponse.json(graphData);
   } catch (error) {

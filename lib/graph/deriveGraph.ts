@@ -12,20 +12,15 @@ import type { GraphResponse, NodeDTO, EdgeDTO, DealDTO, GraphFilters } from './t
 // ============================================================================
 
 export async function deriveGraph(
-  caseStudy: string = 'triangle',
+  companySlugs: string[] | 'all' = 'all',
   filters: GraphFilters = {}
 ): Promise<GraphResponse> {
-  // For MVP, we only support the triangle case study
-  // Later, this can be expanded to support different company sets
-  
-  const companySlugs = caseStudy === 'triangle' 
-    ? ['openai', 'microsoft', 'nvidia']
-    : ['openai', 'microsoft', 'nvidia']; // Default to triangle
-
-  // Fetch companies
-  const companies = await prisma.company.findMany({
-    where: { slug: { in: companySlugs } },
-  });
+  // Fetch companies - either specific slugs or all
+  const companies = companySlugs === 'all'
+    ? await prisma.company.findMany()
+    : await prisma.company.findMany({
+        where: { slug: { in: companySlugs } },
+      });
 
   const companyIds = companies.map(c => c.id);
   const companyMap = new Map(companies.map(c => [c.id, c]));

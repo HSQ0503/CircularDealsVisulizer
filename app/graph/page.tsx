@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { GraphView } from '@/components/graph/GraphView';
 import { Sidebar } from '@/components/graph/Sidebar';
 import { GraphFilters } from '@/components/graph/GraphFilters';
+import { CompanySelector } from '@/components/graph/CompanySelector';
 import type { GraphResponse, NodeDTO, EdgeDTO } from '@/lib/graph/types';
 import { FlowType, DealType } from '@prisma/client';
 
@@ -16,6 +17,9 @@ export default function GraphPage() {
   // Selection state
   const [selectedNode, setSelectedNode] = useState<NodeDTO | null>(null);
   const [selectedEdge, setSelectedEdge] = useState<EdgeDTO | null>(null);
+
+  // Company selection state (empty = all companies)
+  const [selectedCompanies, setSelectedCompanies] = useState<string[]>([]);
 
   // Filter state
   const [selectedFlowTypes, setSelectedFlowTypes] = useState<FlowType[]>([]);
@@ -32,8 +36,14 @@ export default function GraphPage() {
 
     try {
       const params = new URLSearchParams();
-      params.set('caseStudy', 'triangle');
-      
+
+      // Companies filter
+      if (selectedCompanies.length > 0) {
+        params.set('companies', selectedCompanies.join(','));
+      } else {
+        params.set('companies', 'all');
+      }
+
       if (selectedFlowTypes.length > 0) {
         params.set('flowTypes', selectedFlowTypes.join(','));
       }
@@ -46,7 +56,7 @@ export default function GraphPage() {
 
       const res = await fetch(`/api/graph?${params.toString()}`);
       if (!res.ok) throw new Error('Failed to fetch graph data');
-      
+
       const data: GraphResponse = await res.json();
       setGraphData(data);
     } catch (err) {
@@ -54,7 +64,7 @@ export default function GraphPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedFlowTypes, selectedDealTypes, minConfidence]);
+  }, [selectedCompanies, selectedFlowTypes, selectedDealTypes, minConfidence]);
 
   useEffect(() => {
     fetchGraph();
@@ -82,20 +92,25 @@ export default function GraphPage() {
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-bg">
       {/* Header */}
-      <header className="flex-shrink-0 h-14 border-b border-border-subtle bg-surface flex items-center justify-between px-4">
-        <div className="flex items-center gap-4">
-          <Link href="/" className="text-text-muted hover:text-text transition-colors">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-          </Link>
-          <div>
-            <h1 className="text-sm font-semibold text-text">AI Circular Deals</h1>
-            <p className="text-xs text-text-muted">OpenAI ↔ Microsoft ↔ NVIDIA Triangle</p>
-          </div>
-        </div>
+      <header className="flex-shrink-0 h-16 border-b border-border-subtle bg-surface/80 backdrop-blur-sm flex items-center justify-between px-6">
+        {/* Brand */}
+        <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+          <span className="text-lg font-bold text-gradient">AI Circular Deals</span>
+          {graphData && (
+            <span className="text-xs text-text-faint bg-surface-2 px-2.5 py-1 rounded-full">
+              {graphData.nodes.length} companies · {graphData.edges.length} connections
+            </span>
+          )}
+        </Link>
 
-        <div className="flex items-center gap-2">
+        {/* Controls */}
+        <div className="flex items-center gap-3">
+          {/* Company selector */}
+          <CompanySelector
+            selectedSlugs={selectedCompanies}
+            onChange={setSelectedCompanies}
+          />
+
           {/* Filter toggle */}
           <button
             onClick={() => setShowFilters(!showFilters)}

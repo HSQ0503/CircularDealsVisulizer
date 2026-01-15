@@ -282,3 +282,97 @@ h4 { font-size: 1rem; }
 .graph-container .absolute.pointer-events-none {
   animation: tooltipFadeIn 0.15s ease-out;
 }
+
+/* ============================================================================
+   ANIMATED GRAPH PREVIEW (Homepage)
+   ============================================================================ */
+
+@keyframes flowAlongPath {
+  0% {
+    offset-distance: 0%;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    offset-distance: 100%;
+    opacity: 0;
+  }
+}
+
+@keyframes nodePulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.15;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.25;
+  }
+}
+
+.flow-particle {
+  animation: flowAlongPath 3.6s linear infinite;
+  offset-rotate: 0deg;
+}
+
+.node-pulse {
+  transform-origin: center;
+  animation: nodePulse 3s ease-in-out infinite;
+}
+
+/* ============================================================================
+   HOMEPAGE SECTIONS
+   ============================================================================ */
+
+.section-header {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+}
+
+.how-it-works-card {
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  text-align: center;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.how-it-works-card:hover {
+  border-color: var(--border);
+  transform: translateY(-2px);
+}
+
+.how-it-works-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+}
+
+.flow-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.flow-legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}

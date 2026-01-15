@@ -143,21 +143,48 @@ export function GraphView({
     return () => window.removeEventListener('resize', updateDimensions);
   }, []);
 
-  // Fixed positions for stable triangle layout
-  const positions: Record<string, { x: number; y: number }> = {
-    openai: { x: 0, y: -200 },      // Top
-    microsoft: { x: -250, y: 150 }, // Bottom left
-    nvidia: { x: 250, y: 150 },     // Bottom right
+  // Generate positions dynamically based on number of nodes
+  // Arrange nodes in a circle for consistent layout
+  const generatePositions = (nodeCount: number): { x: number; y: number }[] => {
+    const radius = Math.max(150, nodeCount * 40); // Scale radius with node count
+    const positions: { x: number; y: number }[] = [];
+
+    for (let i = 0; i < nodeCount; i++) {
+      // Start from top (-PI/2) and go clockwise
+      const angle = -Math.PI / 2 + (2 * Math.PI * i) / nodeCount;
+      positions.push({
+        x: Math.cos(angle) * radius,
+        y: Math.sin(angle) * radius,
+      });
+    }
+    return positions;
   };
 
-  const graphNodes: GraphNode[] = nodes.map(node => {
-    const pos = positions[node.slug] || { x: 0, y: 0 };
+  // Known company colors for visual consistency
+  const getNodeColor = (slug: string): string => {
+    return nodeColors[slug] || generateColor(slug);
+  };
+
+  // Generate a consistent color from slug for unknown companies
+  const generateColor = (slug: string): string => {
+    let hash = 0;
+    for (let i = 0; i < slug.length; i++) {
+      hash = slug.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const hue = Math.abs(hash) % 360;
+    return `hsl(${hue}, 70%, 55%)`;
+  };
+
+  const positions = generatePositions(nodes.length);
+
+  const graphNodes: GraphNode[] = nodes.map((node, index) => {
+    const pos = positions[index] || { x: 0, y: 0 };
     return {
       id: node.id,
       name: node.name,
       slug: node.slug,
       val: 30,
-      color: nodeColors[node.slug] || '#4C8DFF',
+      color: getNodeColor(node.slug),
       // Fix positions so nodes don't move
       fx: pos.x,
       fy: pos.y,
