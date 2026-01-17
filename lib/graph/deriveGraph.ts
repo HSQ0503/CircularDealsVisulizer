@@ -5,7 +5,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { DealType, FlowType, FlowDirection, PartyRole, Prisma } from '@prisma/client';
-import type { GraphResponse, NodeDTO, EdgeDTO, DealDTO, GraphFilters } from './types';
+import type { GraphResponse, NodeDTO, EdgeDTO, DealDTO, GraphFilters, SuperEdgeDTO, FlowBreakdown } from './types';
 
 // ============================================================================
 // MAIN FUNCTION

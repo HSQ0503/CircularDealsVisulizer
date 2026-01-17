@@ -35,6 +35,29 @@ export interface EdgeDTO {
 }
 
 // ============================================================================
+// SUPER-EDGE (Bundled edges between node pair)
+// ============================================================================
+
+export interface FlowBreakdown {
+  flowType: FlowType;
+  amount: number | null;
+  dealCount: number;
+  edgeIds: string[];
+}
+
+export interface SuperEdgeDTO {
+  id: string;                    // "nodeA--nodeB" (sorted alphabetically)
+  from: string;                  // Company ID (first alphabetically)
+  to: string;                    // Company ID (second alphabetically)
+  totalAmountUSD: number | null;
+  edgeCount: number;             // Number of individual edges bundled
+  dealCount: number;             // Total deals across all edges
+  flowBreakdown: FlowBreakdown[];
+  edges: EdgeDTO[];              // Original edges for drill-down
+  importance: number;            // 0-1 score for visual weight
+}
+
+// ============================================================================
 // DEAL (Full details)
 // ============================================================================
 

@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { DealForm } from '@/components/admin/DealForm';
 
 export const metadata = {
-  title: 'Add New Deal | AI Circular Deals',
+  title: 'Add New Deal | AI Bubble Map',
 };
 
 export default function NewDealPage() {

@@ -91,7 +91,7 @@ function FeaturedCaseStudyCard({ caseStudy }: { caseStudy: typeof CASE_STUDIES[0
 
   return (
     <Link
-      href={`/graph?companies=${companiesParam}`}
+      href={`/graph?companies=${companiesParam}&caseStudy=${caseStudy.id}`}
       className="group block"
     >
       <div className="card card-hover overflow-hidden">
@@ -156,7 +156,7 @@ function CaseStudyCard({ caseStudy }: { caseStudy: typeof CASE_STUDIES[0] }) {
 
   return (
     <Link
-      href={`/graph?companies=${companiesParam}`}
+      href={`/graph?companies=${companiesParam}&caseStudy=${caseStudy.id}`}
       className="group block"
     >
       <div className="card card-hover h-full">

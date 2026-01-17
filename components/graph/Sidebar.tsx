@@ -1,11 +1,13 @@
 'use client';
 
-import type { NodeDTO, EdgeDTO, DealDTO } from '@/lib/graph/types';
+import { useState } from 'react';
+import type { NodeDTO, EdgeDTO, DealDTO, SuperEdgeDTO, FlowBreakdown } from '@/lib/graph/types';
 import { DealCard } from './DealCard';
 
 interface SidebarProps {
   selectedNode: NodeDTO | null;
   selectedEdge: EdgeDTO | null;
+  selectedSuperEdge: SuperEdgeDTO | null;
   edges: EdgeDTO[];
   dealsById: Record<string, DealDTO>;
   nodes: NodeDTO[];

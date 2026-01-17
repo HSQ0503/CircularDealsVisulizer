@@ -14,7 +14,7 @@ export default function Home() {
             {/* Left: Text content */}
             <div className="space-y-6 text-center md:text-left animate-slide-up">
               <h1 className="text-5xl md:text-6xl font-bold tracking-tight">
-                <span className="text-gradient">AI Circular Deals</span>
+                <span className="text-gradient">AI Bubble Map</span>
               </h1>
               <p className="text-lg text-text-muted">
                 The biggest names in AI are investing in each other, buying from each other,
@@ -23,7 +23,7 @@ export default function Home() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
                 <Link
-                  href="/graph?companies=openai,microsoft,nvidia"
+                  href="/graph?companies=openai,microsoft,nvidia&caseStudy=triangle"
                   className="btn btn-primary text-base px-6 py-3"
                 >
                   Explore the Graph
@@ -232,7 +232,7 @@ export default function Home() {
               <span className="badge badge-compute">GPU Supply</span>
             </div>
             <Link
-              href="/graph?companies=openai,microsoft,nvidia"
+              href="/graph?companies=openai,microsoft,nvidia&caseStudy=triangle"
               className="btn btn-primary mt-4"
             >
               View This Case Study

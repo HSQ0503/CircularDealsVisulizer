@@ -2,7 +2,8 @@
 
 import { useRef, useCallback, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import type { NodeDTO, EdgeDTO } from '@/lib/graph/types';
+import type { NodeDTO, EdgeDTO, SuperEdgeDTO, FlowBreakdown } from '@/lib/graph/types';
+import { FlowType } from '@prisma/client';
 
 // Dynamically import ForceGraph2D to avoid SSR issues
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
@@ -22,6 +23,8 @@ interface GraphViewProps {
   onNodeClick: (node: NodeDTO) => void;
   onEdgeClick: (edge: EdgeDTO) => void;
   onBackgroundClick: () => void;
+  // Optional preset positions for case studies (keyed by company slug)
+  presetPositions?: Record<string, { x: number; y: number }>;
 }
 
 // Tooltip state interface
@@ -80,6 +83,19 @@ const nodeColors: Record<string, string> = {
   meta: '#0668E1',
   coreweave: '#7C3AED',
   'scale-ai': '#E11D48',
+  google: '#EA4335',
+  anthropic: '#D97706',
+  cohere: '#6366F1',
+  runway: '#EC4899',
+  windsurf: '#14B8A6',
+  amazon: '#FF9900',
+  'stability-ai': '#8B5CF6',
+  'hugging-face': '#FFD21E',
+  zoox: '#00D4AA',
+  irobot: '#8DC63F',
+  softbank: '#C00000',
+  oracle: '#F80000',
+  xai: '#1D9BF0',
 };
 
 // Format currency amount
@@ -134,6 +150,7 @@ export function GraphView({
   onNodeClick,
   onEdgeClick,
   onBackgroundClick,
+  presetPositions,
 }: GraphViewProps) {
   const graphRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -162,22 +179,12 @@ export function GraphView({
     return () => window.removeEventListener('resize', updateDimensions);
   }, []);
 
-  // Generate positions dynamically based on number of nodes
-  // Arrange nodes in a circle for consistent layout
-  const generatePositions = (nodeCount: number): { x: number; y: number }[] => {
-    const radius = Math.max(150, nodeCount * 40); // Scale radius with node count
-    const positions: { x: number; y: number }[] = [];
-
-    for (let i = 0; i < nodeCount; i++) {
-      // Start from top (-PI/2) and go clockwise
-      const angle = -Math.PI / 2 + (2 * Math.PI * i) / nodeCount;
-      positions.push({
-        x: Math.cos(angle) * radius,
-        y: Math.sin(angle) * radius,
-      });
-    }
-    return positions;
-  };
+  // Calculate node connectivity (degree) from edges
+  const nodeConnectivity = new Map<string, number>();
+  edges.forEach(edge => {
+    nodeConnectivity.set(edge.from, (nodeConnectivity.get(edge.from) || 0) + 1);
+    nodeConnectivity.set(edge.to, (nodeConnectivity.get(edge.to) || 0) + 1);
+  });
 
   // Known company colors for visual consistency
   const getNodeColor = (slug: string): string => {
@@ -194,15 +201,59 @@ export function GraphView({
     return `hsl(${hue}, 70%, 55%)`;
   };
 
-  const positions = generatePositions(nodes.length);
+  // Calculate node size based on connectivity (30-55 range)
+  const getNodeSize = (nodeId: string): number => {
+    const connectivity = nodeConnectivity.get(nodeId) || 0;
+    return 30 + Math.min(connectivity * 2.5, 25);
+  };
 
-  const graphNodes: GraphNode[] = nodes.map((node, index) => {
-    const pos = positions[index] || { x: 0, y: 0 };
+  // Sort nodes by connectivity (most connected first)
+  const sortedNodes = [...nodes].sort((a, b) =>
+    (nodeConnectivity.get(b.id) || 0) - (nodeConnectivity.get(a.id) || 0)
+  );
+
+  // Generate positions - use preset positions if available, otherwise use auto layout
+  const nodePositions = new Map<string, { x: number; y: number }>();
+
+  if (presetPositions) {
+    // Use preset positions for case studies (keyed by slug)
+    nodes.forEach((node) => {
+      const preset = presetPositions[node.slug];
+      if (preset) {
+        nodePositions.set(node.id, preset);
+      } else {
+        // Fallback to center for any missing nodes
+        nodePositions.set(node.id, { x: 0, y: 0 });
+      }
+    });
+  } else {
+    // Auto layout: core-periphery with inner/outer rings
+    const innerCount = Math.min(6, Math.ceil(nodes.length / 3));
+    const innerRadius = 220;
+    const outerRadius = 450;
+
+    sortedNodes.forEach((node, i) => {
+      const isInner = i < innerCount;
+      const ringIndex = isInner ? i : i - innerCount;
+      const ringCount = isInner ? innerCount : nodes.length - innerCount;
+      const radius = isInner ? innerRadius : outerRadius;
+      // Start from top (-PI/2) and go clockwise
+      const angle = -Math.PI / 2 + (2 * Math.PI * ringIndex) / ringCount;
+
+      nodePositions.set(node.id, {
+        x: Math.cos(angle) * radius,
+        y: Math.sin(angle) * radius,
+      });
+    });
+  }
+
+  const graphNodes: GraphNode[] = nodes.map((node) => {
+    const pos = nodePositions.get(node.id) || { x: 0, y: 0 };
     return {
       id: node.id,
       name: node.name,
       slug: node.slug,
-      val: 30,
+      val: getNodeSize(node.id),
       color: getNodeColor(node.slug),
       // Fix positions so nodes don't move
       fx: pos.x,
@@ -262,7 +313,8 @@ export function GraphView({
     const isSelected = n.id === selectedNodeId;
     const label = n.name;
     const fontSize = 14 / globalScale;
-    const nodeRadius = 40;
+    // Use node's val for dynamic sizing (val is set based on connectivity)
+    const nodeRadius = n.val || 40;
     const x = n.x || 0;
     const y = n.y || 0;
 
@@ -503,8 +555,10 @@ export function GraphView({
         backgroundColor="transparent"
         nodeCanvasObject={paintNode}
         nodePointerAreaPaint={(node: any, color: string, ctx: CanvasRenderingContext2D) => {
+          // Use node's val for dynamic pointer area (matches node size + padding)
+          const radius = (node.val || 40) + 5;
           ctx.beginPath();
-          ctx.arc(node.x || 0, node.y || 0, 45, 0, 2 * Math.PI);
+          ctx.arc(node.x || 0, node.y || 0, radius, 0, 2 * Math.PI);
           ctx.fillStyle = color;
           ctx.fill();
         }}
