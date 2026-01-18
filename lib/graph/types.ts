@@ -99,6 +99,46 @@ export interface DealDTO {
 }
 
 // ============================================================================
+// LOOP (Circular Flow Detection)
+// ============================================================================
+
+export interface LoopDTO {
+  id: string;                    // "companyA--companyB" (sorted alphabetically)
+  company1: { id: string; name: string; slug: string };
+  company2: { id: string; name: string; slug: string };
+
+  // The two edges forming the loop
+  edge1: EdgeDTO;                // company1 → company2
+  edge2: EdgeDTO;                // company2 → company1
+
+  // Metrics
+  totalCirculation: number;      // Sum of both edge amounts in USD
+  balanceRatio: number;          // 0-1 (1 = perfectly balanced)
+  flowDiversity: boolean;        // true if different flow types
+  loopScore: number;             // 0-1 composite metric
+}
+
+// ============================================================================
+// HUB SCORE (Company-Level Circularity)
+// ============================================================================
+
+export interface HubScoreDTO {
+  companyId: string;
+  companyName: string;
+  companySlug: string;
+
+  // Core metrics
+  hubScore: number;           // Sum of loop scores
+  normalizedHubScore: number; // 0-1 normalized
+
+  // Supporting data
+  loopCount: number;          // Number of loops involved in
+  avgLoopScore: number;       // Average loop score
+  totalCirculation: number;   // Total USD in company's loops
+  loopIds: string[];          // IDs of loops this company is in
+}
+
+// ============================================================================
 // GRAPH RESPONSE
 // ============================================================================
 
@@ -106,6 +146,8 @@ export interface GraphResponse {
   nodes: NodeDTO[];
   edges: EdgeDTO[];
   dealsById: Record<string, DealDTO>;
+  loops: LoopDTO[];              // Detected loops with scores
+  hubScores: HubScoreDTO[];      // Company-level circularity scores
 }
 
 // ============================================================================

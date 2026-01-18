@@ -8,7 +8,7 @@ import { Sidebar } from '@/components/graph/Sidebar';
 import { GraphFilters } from '@/components/graph/GraphFilters';
 import { CompanySelector } from '@/components/graph/CompanySelector';
 import { getCaseStudyById } from '@/lib/caseStudies';
-import type { GraphResponse, NodeDTO, EdgeDTO, SuperEdgeDTO } from '@/lib/graph/types';
+import type { GraphResponse, NodeDTO, EdgeDTO } from '@/lib/graph/types';
 import { FlowType, DealType } from '@prisma/client';
 
 interface Company {
@@ -445,6 +445,7 @@ function GraphPageContent() {
               edges={graphData.edges}
               dealsById={graphData.dealsById}
               nodes={graphData.nodes}
+              loops={graphData.loops}
               onClose={handleClearSelection}
             />
           )}

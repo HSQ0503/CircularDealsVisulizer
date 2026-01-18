@@ -7,14 +7,43 @@ export default function Home() {
       {/* Background gradient effect */}
       <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary-muted/20 via-bg to-bg -z-10" />
 
+      {/* Navbar */}
+      <nav className="sticky top-0 z-50 border-b border-border-subtle bg-bg/80 backdrop-blur-sm">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <Link href="/" className="text-lg font-bold text-gradient">
+            AI Bubble Map
+          </Link>
+          <div className="flex items-center gap-1">
+            <Link
+              href="/case-studies"
+              className="px-4 py-2 text-sm text-text-muted hover:text-text transition-colors"
+            >
+              Case Studies
+            </Link>
+            <Link
+              href="/research"
+              className="px-4 py-2 text-sm text-text-muted hover:text-text transition-colors"
+            >
+              Research
+            </Link>
+            <Link
+              href="/graph"
+              className="ml-2 btn btn-primary btn-sm"
+            >
+              Explore Graph
+            </Link>
+          </div>
+        </div>
+      </nav>
+
       {/* Hero Section */}
       <section className="pt-16 pb-12 px-6">
         <div className="max-w-4xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             {/* Left: Text content */}
             <div className="space-y-6 text-center md:text-left animate-slide-up">
-              <h1 className="text-5xl md:text-6xl font-bold tracking-tight">
-                <span className="text-gradient">AI Bubble Map</span>
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-text">
+                Follow the money in AI
               </h1>
               <p className="text-lg text-text-muted">
                 The biggest names in AI are investing in each other, buying from each other,
@@ -31,14 +60,8 @@ export default function Home() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>
                 </Link>
-                <Link
-                  href="/case-studies"
-                  className="btn btn-ghost text-base px-6 py-3"
-                >
-                  Browse Case Studies
-                </Link>
               </div>
-              <p className="text-sm text-text-faint pt-2">
+              <p className="text-sm text-text-faint">
                 $350 billion+ flowing between just three companies. Where does it actually come from?
               </p>
             </div>

@@ -1,7 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import type { NodeDTO, EdgeDTO, DealDTO, SuperEdgeDTO, FlowBreakdown } from '@/lib/graph/types';
+import type { NodeDTO, EdgeDTO, DealDTO, SuperEdgeDTO, LoopDTO } from '@/lib/graph/types';
 import { DealCard } from './DealCard';
 
 interface SidebarProps {
@@ -11,6 +10,7 @@ interface SidebarProps {
   edges: EdgeDTO[];
   dealsById: Record<string, DealDTO>;
   nodes: NodeDTO[];
+  loops?: LoopDTO[];
   onClose: () => void;
 }
 
@@ -21,8 +21,15 @@ const flowTypeColors: Record<string, string> = {
   EQUITY: 'text-flow-equity',
 };
 
-export function Sidebar({ selectedNode, selectedEdge, edges, dealsById, nodes, onClose }: SidebarProps) {
+export function Sidebar({ selectedNode, selectedEdge, edges, dealsById, nodes, loops = [], onClose }: SidebarProps) {
   const nodeMap = new Map(nodes.map(n => [n.id, n]));
+
+  // Find if the selected edge is part of a loop
+  const findLoopForEdge = (edge: EdgeDTO): LoopDTO | undefined => {
+    return loops.find(loop =>
+      (loop.edge1.id === edge.id || loop.edge2.id === edge.id)
+    );
+  };
 
   if (!selectedNode && !selectedEdge) {
     return (
@@ -118,6 +125,8 @@ export function Sidebar({ selectedNode, selectedEdge, edges, dealsById, nodes, o
     const fromNode = nodeMap.get(selectedEdge.from);
     const toNode = nodeMap.get(selectedEdge.to);
     const deals = selectedEdge.dealIds.map(id => dealsById[id]).filter(Boolean);
+    const loop = findLoopForEdge(selectedEdge);
+    const otherEdge = loop ? (loop.edge1.id === selectedEdge.id ? loop.edge2 : loop.edge1) : null;
 
     return (
       <div className="h-full flex flex-col animate-fade-in">
@@ -152,6 +161,34 @@ export function Sidebar({ selectedNode, selectedEdge, edges, dealsById, nodes, o
               </svg>
             </button>
           </div>
+
+          {/* Loop Score indicator */}
+          {loop && (
+            <div className="mt-4 p-3 bg-primary/10 border border-primary/30 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  <span className="text-sm font-medium text-primary">Part of Circular Flow</span>
+                </div>
+                <span className={`font-mono text-lg font-bold ${loop.loopScore >= 0.7 ? 'text-success' : loop.loopScore >= 0.5 ? 'text-warning' : 'text-text-muted'}`}>
+                  {loop.loopScore.toFixed(2)}
+                </span>
+              </div>
+              <p className="text-xs text-text-muted">
+                Return flow: <span className="text-text">{otherEdge?.flowType.replace('_', ' ')}</span>
+                {otherEdge?.totalAmountUSD && (
+                  <span className="text-text-faint ml-1">({formatUSD(otherEdge.totalAmountUSD)})</span>
+                )}
+              </p>
+              {loop.totalCirculation > 0 && (
+                <p className="text-xs text-text-muted mt-1">
+                  Total circulation: <span className="text-text">{formatUSD(loop.totalCirculation)}</span>
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Stats */}
           <div className="grid grid-cols-2 gap-3 mt-4">

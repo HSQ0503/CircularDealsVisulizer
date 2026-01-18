@@ -96,6 +96,9 @@ const nodeColors: Record<string, string> = {
   softbank: '#C00000',
   oracle: '#F80000',
   xai: '#1D9BF0',
+  amd: '#00BCD4',
+  intel: '#0071C5',
+  ibm: '#1F70C1',
 };
 
 // Format currency amount

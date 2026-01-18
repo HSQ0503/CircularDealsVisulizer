@@ -5,7 +5,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { DealType, FlowType, FlowDirection, PartyRole, Prisma } from '@prisma/client';
-import type { GraphResponse, NodeDTO, EdgeDTO, DealDTO, GraphFilters, SuperEdgeDTO, FlowBreakdown } from './types';
+import type { GraphResponse, NodeDTO, EdgeDTO, DealDTO, GraphFilters, SuperEdgeDTO, FlowBreakdown, LoopDTO, HubScoreDTO } from './types';
 
 // ============================================================================
 // MAIN FUNCTION
@@ -197,7 +197,19 @@ export async function deriveGraph(
     };
   }
 
-  return { nodes, edges, dealsById };
+  // ============================================================================
+  // DETECT LOOPS (Circular Flows)
+  // ============================================================================
+
+  const loops = detectLoops(edges, nodes);
+
+  // ============================================================================
+  // CALCULATE HUB SCORES
+  // ============================================================================
+
+  const hubScores = calculateHubScores(loops, nodes);
+
+  return { nodes, edges, dealsById, loops, hubScores };
 }
 
 // ============================================================================
@@ -259,10 +271,167 @@ function inferDirection(parties: Array<{ companyId: string; role: PartyRole; dir
 function aggregateAmountText(texts: string[]): string | null {
   if (texts.length === 0) return null;
   if (texts.length === 1) return texts[0];
-  
+
   // If all the same, return one
   const unique = [...new Set(texts)];
   if (unique.length === 1) return unique[0];
-  
+
   return 'Multiple amounts';
+}
+
+// ============================================================================
+// LOOP DETECTION
+// ============================================================================
+
+function detectLoops(edges: EdgeDTO[], nodes: NodeDTO[]): LoopDTO[] {
+  // Index edges by direction for quick lookup
+  const edgeMap = new Map<string, EdgeDTO>();
+  for (const edge of edges) {
+    const key = `${edge.from}→${edge.to}`;
+    // If multiple edges same direction, keep the one with higher amount
+    const existing = edgeMap.get(key);
+    if (!existing || (edge.totalAmountUSD ?? 0) > (existing.totalAmountUSD ?? 0)) {
+      edgeMap.set(key, edge);
+    }
+  }
+
+  const loops: LoopDTO[] = [];
+  const seen = new Set<string>();
+  const nodeMap = new Map(nodes.map(n => [n.id, n]));
+
+  for (const edge of edges) {
+    // Check for reverse edge (B → A when we have A → B)
+    const reverseKey = `${edge.to}→${edge.from}`;
+    const reverseEdge = edgeMap.get(reverseKey);
+
+    if (reverseEdge) {
+      // Create canonical ID (alphabetically sorted company IDs)
+      const pairId = [edge.from, edge.to].sort().join('--');
+      if (seen.has(pairId)) continue;
+      seen.add(pairId);
+
+      const node1 = nodeMap.get(edge.from);
+      const node2 = nodeMap.get(edge.to);
+
+      if (!node1 || !node2) continue;
+
+      // Calculate metrics
+      const balanceRatio = calculateBalance(edge, reverseEdge);
+      const loopScore = calculateLoopScore(edge, reverseEdge);
+
+      loops.push({
+        id: pairId,
+        company1: { id: node1.id, name: node1.name, slug: node1.slug },
+        company2: { id: node2.id, name: node2.name, slug: node2.slug },
+        edge1: edge,
+        edge2: reverseEdge,
+        totalCirculation: (edge.totalAmountUSD ?? 0) + (reverseEdge.totalAmountUSD ?? 0),
+        balanceRatio,
+        flowDiversity: edge.flowType !== reverseEdge.flowType,
+        loopScore,
+      });
+    }
+  }
+
+  // Sort by loop score descending
+  return loops.sort((a, b) => b.loopScore - a.loopScore);
+}
+
+function calculateBalance(edge1: EdgeDTO, edge2: EdgeDTO): number {
+  const amt1 = edge1.totalAmountUSD ?? 0;
+  const amt2 = edge2.totalAmountUSD ?? 0;
+
+  if (amt1 === 0 && amt2 === 0) return 0.5;
+  if (amt1 === 0 || amt2 === 0) return 0.5;
+
+  // 0.5 base + 0.5 scaled by min/max ratio = range [0.5, 1.0]
+  return 0.5 + (0.5 * Math.min(amt1, amt2) / Math.max(amt1, amt2));
+}
+
+function calculateLoopScore(edge1: EdgeDTO, edge2: EdgeDTO): number {
+  // Flow diversity: different flow types = stronger loop evidence (1.0)
+  // Same flow type = weaker evidence (0.7)
+  const flowDiversity = edge1.flowType !== edge2.flowType ? 1.0 : 0.7;
+
+  // Balance: symmetric amounts = stronger loop
+  const balance = calculateBalance(edge1, edge2);
+
+  // Confidence: average of both edges, normalized to 0-1
+  const avgConfidence = ((edge1.avgConfidence ?? 3) + (edge2.avgConfidence ?? 3)) / 10;
+
+  // Weighted composite: 35% diversity + 35% balance + 30% confidence
+  return (0.35 * flowDiversity) + (0.35 * balance) + (0.30 * avgConfidence);
+}
+
+// ============================================================================
+// HUB SCORE CALCULATION
+// ============================================================================
+
+function calculateHubScores(loops: LoopDTO[], nodes: NodeDTO[]): HubScoreDTO[] {
+  // Map: companyId -> { scores[], circulation[], loopIds[] }
+  const companyData = new Map<string, {
+    node: NodeDTO;
+    loopScores: number[];
+    circulations: number[];
+    loopIds: string[];
+  }>();
+
+  // Initialize for all nodes
+  for (const node of nodes) {
+    companyData.set(node.id, {
+      node,
+      loopScores: [],
+      circulations: [],
+      loopIds: [],
+    });
+  }
+
+  // Aggregate from loops
+  for (const loop of loops) {
+    const company1Data = companyData.get(loop.company1.id);
+    const company2Data = companyData.get(loop.company2.id);
+
+    if (company1Data) {
+      company1Data.loopScores.push(loop.loopScore);
+      company1Data.circulations.push(loop.totalCirculation);
+      company1Data.loopIds.push(loop.id);
+    }
+
+    if (company2Data) {
+      company2Data.loopScores.push(loop.loopScore);
+      company2Data.circulations.push(loop.totalCirculation);
+      company2Data.loopIds.push(loop.id);
+    }
+  }
+
+  // Calculate hub scores
+  const hubScores: HubScoreDTO[] = [];
+  let maxHubScore = 0;
+
+  for (const [companyId, data] of companyData) {
+    const hubScore = data.loopScores.reduce((sum, s) => sum + s, 0);
+    maxHubScore = Math.max(maxHubScore, hubScore);
+
+    hubScores.push({
+      companyId,
+      companyName: data.node.name,
+      companySlug: data.node.slug,
+      hubScore,
+      normalizedHubScore: 0, // Will normalize after
+      loopCount: data.loopScores.length,
+      avgLoopScore: data.loopScores.length > 0
+        ? data.loopScores.reduce((a, b) => a + b, 0) / data.loopScores.length
+        : 0,
+      totalCirculation: data.circulations.reduce((sum, c) => sum + c, 0),
+      loopIds: data.loopIds,
+    });
+  }
+
+  // Normalize hub scores
+  for (const hs of hubScores) {
+    hs.normalizedHubScore = maxHubScore > 0 ? hs.hubScore / maxHubScore : 0;
+  }
+
+  // Sort by hub score descending
+  return hubScores.sort((a, b) => b.hubScore - a.hubScore);
 }
