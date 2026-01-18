@@ -23,7 +23,7 @@ export default function Home() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
                 <Link
-                  href="/graph?companies=openai,microsoft,nvidia&caseStudy=triangle"
+                  href="/graph"
                   className="btn btn-primary text-base px-6 py-3"
                 >
                   Explore the Graph

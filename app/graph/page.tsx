@@ -212,103 +212,110 @@ function GraphPageContent() {
         </header>
 
         {/* Selection screen */}
-        <div className="flex-1 flex items-center justify-center p-6">
-          <div className="max-w-2xl w-full">
-            <div className="text-center mb-8">
-              <h1 className="text-2xl font-bold text-text mb-2">Select Companies to Visualize</h1>
-              <p className="text-text-muted">
-                Choose which companies you want to see in the graph. You can select multiple companies to explore their interconnected deals.
-              </p>
-            </div>
-
-            {loadingCompanies ? (
-              <div className="flex justify-center py-12">
-                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="max-w-2xl mx-auto">
+              <div className="text-center mb-8">
+                <h1 className="text-2xl font-bold text-text mb-2">Select Companies to Visualize</h1>
+                <p className="text-text-muted">
+                  Choose which companies you want to see in the graph. You can select multiple companies to explore their interconnected deals.
+                </p>
               </div>
-            ) : (
-              <>
-                {/* Quick actions */}
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-sm text-text-muted">
-                    {selectedCompanies.length} of {availableCompanies.length} selected
-                  </span>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={selectAllCompanies}
-                      className="text-sm text-primary hover:text-primary-hover"
-                    >
-                      Select All
-                    </button>
-                    <span className="text-text-faint">|</span>
-                    <button
-                      onClick={clearAllCompanies}
-                      className="text-sm text-text-muted hover:text-text"
-                    >
-                      Clear
-                    </button>
-                  </div>
-                </div>
 
-                {/* Company grid */}
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-8">
-                  {availableCompanies.map(company => {
-                    const isSelected = selectedCompanies.includes(company.slug);
-                    return (
+              {loadingCompanies ? (
+                <div className="flex justify-center py-12">
+                  <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : (
+                <>
+                  {/* Quick actions */}
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-sm text-text-muted">
+                      {selectedCompanies.length} of {availableCompanies.length} selected
+                    </span>
+                    <div className="flex gap-2">
                       <button
-                        key={company.id}
-                        onClick={() => toggleCompany(company.slug)}
-                        className={`
-                          p-4 rounded-lg border-2 text-left transition-all
-                          ${isSelected
-                            ? 'border-primary bg-primary/10'
-                            : 'border-border hover:border-border-subtle hover:bg-surface-2'
-                          }
-                        `}
+                        onClick={selectAllCompanies}
+                        className="text-sm text-primary hover:text-primary-hover"
                       >
-                        <div className="flex items-center gap-3">
-                          <div className={`
-                            w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0
-                            ${isSelected ? 'bg-primary border-primary' : 'border-border'}
-                          `}>
-                            {isSelected && (
-                              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                              </svg>
-                            )}
-                          </div>
-                          <div>
-                            <div className="font-medium text-text">{company.name}</div>
-                            {company.ticker && (
-                              <div className="text-xs text-text-faint">{company.ticker}</div>
-                            )}
-                          </div>
-                        </div>
+                        Select All
                       </button>
-                    );
-                  })}
-                </div>
+                      <span className="text-text-faint">|</span>
+                      <button
+                        onClick={clearAllCompanies}
+                        className="text-sm text-text-muted hover:text-text"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  </div>
 
-                {/* View Graph button */}
-                <div className="flex justify-center">
-                  <button
-                    onClick={handleViewGraph}
-                    disabled={selectedCompanies.length === 0}
-                    className={`
-                      btn btn-primary btn-lg px-8
-                      ${selectedCompanies.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}
-                    `}
-                  >
-                    View Graph
-                    {selectedCompanies.length > 0 && (
-                      <span className="ml-2 text-sm opacity-80">
-                        ({selectedCompanies.length} companies)
-                      </span>
-                    )}
-                  </button>
-                </div>
-              </>
-            )}
+                  {/* Company grid */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {availableCompanies.map(company => {
+                      const isSelected = selectedCompanies.includes(company.slug);
+                      return (
+                        <button
+                          key={company.id}
+                          onClick={() => toggleCompany(company.slug)}
+                          className={`
+                            p-4 rounded-lg border-2 text-left transition-all
+                            ${isSelected
+                              ? 'border-primary bg-primary/10'
+                              : 'border-border hover:border-border-subtle hover:bg-surface-2'
+                            }
+                          `}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`
+                              w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0
+                              ${isSelected ? 'bg-primary border-primary' : 'border-border'}
+                            `}>
+                              {isSelected && (
+                                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </div>
+                            <div>
+                              <div className="font-medium text-text">{company.name}</div>
+                              {company.ticker && (
+                                <div className="text-xs text-text-faint">{company.ticker}</div>
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
+
+          {/* Fixed footer with View Graph button */}
+          {!loadingCompanies && (
+            <div className="flex-shrink-0 border-t border-border-subtle bg-surface/80 backdrop-blur-sm p-4">
+              <div className="flex justify-center">
+                <button
+                  onClick={handleViewGraph}
+                  disabled={selectedCompanies.length === 0}
+                  className={`
+                    btn btn-primary btn-lg px-8
+                    ${selectedCompanies.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}
+                  `}
+                >
+                  View Graph
+                  {selectedCompanies.length > 0 && (
+                    <span className="ml-2 text-sm opacity-80">
+                      ({selectedCompanies.length} companies)
+                    </span>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
