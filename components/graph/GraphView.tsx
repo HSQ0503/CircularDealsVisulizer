@@ -204,10 +204,10 @@ export function GraphView({
     return `hsl(${hue}, 70%, 55%)`;
   };
 
-  // Calculate node size based on connectivity (30-55 range)
+  // Calculate node size based on connectivity (22-40 range)
   const getNodeSize = (nodeId: string): number => {
     const connectivity = nodeConnectivity.get(nodeId) || 0;
-    return 30 + Math.min(connectivity * 2.5, 25);
+    return 22 + Math.min(connectivity * 1.5, 18);
   };
 
   // Sort nodes by connectivity (most connected first)

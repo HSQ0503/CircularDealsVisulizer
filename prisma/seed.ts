@@ -9,7 +9,7 @@
  * To add new companies/deals, add them to the COMPANIES and DEALS arrays below.
  */
 
-import { PrismaClient, DealType, FlowType, PartyRole, FlowDirection, SourceType, DataStatus } from '@prisma/client';
+import { PrismaClient, DealType, FlowType, PartyRole, FlowDirection, SourceType, DataStatus, ValuationType } from '@prisma/client';
 
 const prisma = new PrismaClient({
   datasourceUrl: process.env.DATABASE_URL,
@@ -26,6 +26,10 @@ interface CompanyData {
   description?: string;
   websiteUrl?: string;
   logoUrl?: string;
+  valuationUSD?: number;
+  valuationType?: ValuationType;
+  valuationAsOf?: Date;
+  valuationSource?: string;
 }
 
 const COMPANIES: CompanyData[] = [
@@ -35,14 +39,22 @@ const COMPANIES: CompanyData[] = [
     description: 'AI research company founded in 2015, creator of GPT and ChatGPT. Restructured as a public benefit corporation (OpenAI Group PBC) in 2025. Mission: ensure artificial general intelligence benefits all humanity.',
     websiteUrl: 'https://openai.com',
     logoUrl: '/logos/openai.svg',
+    valuationUSD: 300_000_000_000,
+    valuationType: ValuationType.PRIVATE,
+    valuationAsOf: new Date('2025-03-01'),
+    valuationSource: 'Series F funding round led by SoftBank ($40B raised at $300B valuation)',
   },
   {
     slug: 'microsoft',
     name: 'Microsoft',
     ticker: 'MSFT',
-    description: 'Technology corporation valued at ~$3.5 trillion. Operates Azure, the world\'s second-largest cloud platform ($75B revenue in FY2025). Major OpenAI investor and exclusive cloud partner. Products span Office 365, Windows, Xbox, and enterprise solutions.',
+    description: 'Technology corporation valued at ~$3.4 trillion. Operates Azure, the world\'s second-largest cloud platform ($75B revenue in FY2025). Major OpenAI investor and exclusive cloud partner. Products span Office 365, Windows, Xbox, and enterprise solutions.',
     websiteUrl: 'https://microsoft.com',
     logoUrl: '/logos/microsoft.svg',
+    valuationUSD: 3_420_000_000_000,
+    valuationType: ValuationType.MARKET_CAP,
+    valuationAsOf: new Date('2026-01-16'),
+    valuationSource: 'NASDAQ market capitalization',
   },
   {
     slug: 'nvidia',
@@ -51,6 +63,10 @@ const COMPANIES: CompanyData[] = [
     description: 'Dominant AI chip company controlling ~90% of the AI accelerator market. Invented the GPU in 1999. Data center revenue represents 88% of total sales. Maker of Blackwell and upcoming Rubin AI architectures powering modern AI training and inference.',
     websiteUrl: 'https://nvidia.com',
     logoUrl: '/logos/nvidia.svg',
+    valuationUSD: 4_530_000_000_000,
+    valuationType: ValuationType.MARKET_CAP,
+    valuationAsOf: new Date('2026-01-16'),
+    valuationSource: 'NASDAQ market capitalization - world\'s most valuable company',
   },
   {
     slug: 'meta',
@@ -59,6 +75,10 @@ const COMPANIES: CompanyData[] = [
     description: 'Technology company focused on social platforms and AI research, formerly Facebook. Operates major AI research labs and builds large-scale AI infrastructure for training foundation models.',
     websiteUrl: 'https://meta.com',
     logoUrl: '/logos/meta.svg',
+    valuationUSD: 1_560_000_000_000,
+    valuationType: ValuationType.MARKET_CAP,
+    valuationAsOf: new Date('2026-01-16'),
+    valuationSource: 'NASDAQ market capitalization',
   },
   {
     slug: 'coreweave',
@@ -67,6 +87,10 @@ const COMPANIES: CompanyData[] = [
     description: 'AI-native cloud provider specializing in GPU compute infrastructure. NVIDIA Elite Cloud Service Provider offering large-scale AI, ML, and VFX workloads on NVIDIA platforms.',
     websiteUrl: 'https://coreweave.com',
     logoUrl: '/logos/coreweave.svg',
+    valuationUSD: 45_000_000_000,
+    valuationType: ValuationType.MARKET_CAP,
+    valuationAsOf: new Date('2026-01-16'),
+    valuationSource: 'NASDAQ market capitalization (IPO in 2025)',
   },
   {
     slug: 'scale-ai',
@@ -74,6 +98,10 @@ const COMPANIES: CompanyData[] = [
     description: 'AI data labeling and infrastructure company founded in 2016. Provides data annotation services for training AI models. Major clients included OpenAI, Google, and Microsoft before Meta\'s 49% stake acquisition in 2025.',
     websiteUrl: 'https://scale.com',
     logoUrl: '/logos/scale-ai.svg',
+    valuationUSD: 29_000_000_000,
+    valuationType: ValuationType.PRIVATE,
+    valuationAsOf: new Date('2025-06-12'),
+    valuationSource: 'Meta $14.3B investment for 49% stake (Series G-1)',
   },
   {
     slug: 'google',
@@ -82,13 +110,21 @@ const COMPANIES: CompanyData[] = [
     description: 'Technology giant and Alphabet subsidiary. Operates Google Cloud Platform (GCP), the third-largest cloud provider. Develops AI through Google DeepMind, creator of Gemini models. Major investor in AI startups including Anthropic.',
     websiteUrl: 'https://google.com',
     logoUrl: '/logos/google.svg',
+    valuationUSD: 4_000_000_000_000,
+    valuationType: ValuationType.MARKET_CAP,
+    valuationAsOf: new Date('2026-01-12'),
+    valuationSource: 'NASDAQ market capitalization (Alphabet parent company)',
   },
   {
     slug: 'anthropic',
     name: 'Anthropic',
-    description: 'AI safety company founded in 2021 by former OpenAI researchers. Creator of Claude, a leading AI assistant. Focused on building reliable, interpretable AI systems. Backed by Google, Amazon, and other major investors.',
+    description: 'AI safety company founded in 2021 by former OpenAI researchers. Creator of Claude, a leading AI assistant. Focused on building reliable, interpretable AI systems. Backed by Google, Amazon, Microsoft, and NVIDIA.',
     websiteUrl: 'https://anthropic.com',
     logoUrl: '/logos/anthropic.svg',
+    valuationUSD: 350_000_000_000,
+    valuationType: ValuationType.PRIVATE,
+    valuationAsOf: new Date('2025-11-18'),
+    valuationSource: 'Microsoft $5B and NVIDIA $10B investments (valued at $350B)',
   },
   {
     slug: 'cohere',
@@ -96,6 +132,10 @@ const COMPANIES: CompanyData[] = [
     description: 'Enterprise AI company founded in 2019 by former Google researchers. Provides NLP APIs and large language models for businesses. Focused on enterprise deployment of generative AI.',
     websiteUrl: 'https://cohere.com',
     logoUrl: '/logos/cohere.svg',
+    valuationUSD: 7_000_000_000,
+    valuationType: ValuationType.PRIVATE,
+    valuationAsOf: new Date('2025-09-24'),
+    valuationSource: '$100M extension round (total $600M at $7B valuation)',
   },
   {
     slug: 'runway',
@@ -103,13 +143,21 @@ const COMPANIES: CompanyData[] = [
     description: 'Generative AI company specializing in video and creative tools. Known for Gen-2 text-to-video models. Provides AI-powered creative suite for filmmakers and content creators.',
     websiteUrl: 'https://runwayml.com',
     logoUrl: '/logos/runway.svg',
+    valuationUSD: 3_550_000_000,
+    valuationType: ValuationType.PRIVATE,
+    valuationAsOf: new Date('2025-12-01'),
+    valuationSource: 'Series D led by General Atlantic ($308M raised at $3B+)',
   },
   {
     slug: 'windsurf',
     name: 'Windsurf',
-    description: 'AI coding startup (formerly Codeium) building AI-powered code generation and developer tools. Acquired key talent and technology by Google in 2025.',
+    description: 'AI coding startup (formerly Codeium) building AI-powered code generation and developer tools. Google acquired key talent ($2.4B) and Cognition bought remaining assets ($250M) in 2025.',
     websiteUrl: 'https://windsurf.ai',
     logoUrl: '/logos/windsurf.svg',
+    valuationUSD: 2_400_000_000,
+    valuationType: ValuationType.ACQUISITION,
+    valuationAsOf: new Date('2025-07-11'),
+    valuationSource: 'Google $2.4B licensing deal + talent acquisition',
   },
   {
     slug: 'amazon',
@@ -118,6 +166,10 @@ const COMPANIES: CompanyData[] = [
     description: 'E-commerce and cloud computing giant. Operates AWS, the world\'s largest cloud platform. Major AI investor with $8B stake in Anthropic. AWS serves as Anthropic\'s primary cloud and training partner.',
     websiteUrl: 'https://amazon.com',
     logoUrl: '/logos/amazon.svg',
+    valuationUSD: 2_550_000_000_000,
+    valuationType: ValuationType.MARKET_CAP,
+    valuationAsOf: new Date('2026-01-15'),
+    valuationSource: 'NASDAQ market capitalization',
   },
   {
     slug: 'stability-ai',
@@ -125,6 +177,10 @@ const COMPANIES: CompanyData[] = [
     description: 'AI company behind Stable Diffusion, an open-source text-to-image model. Founded in 2020, pioneered democratized access to generative AI for image creation.',
     websiteUrl: 'https://stability.ai',
     logoUrl: '/logos/stability-ai.svg',
+    valuationUSD: 1_000_000_000,
+    valuationType: ValuationType.PRIVATE,
+    valuationAsOf: new Date('2024-06-25'),
+    valuationSource: '$80M funding round with new CEO appointment',
   },
   {
     slug: 'hugging-face',
@@ -132,6 +188,10 @@ const COMPANIES: CompanyData[] = [
     description: 'AI community platform and model hub. Hosts thousands of open-source machine learning models, datasets, and tools. Known for the Transformers library and collaborative AI development.',
     websiteUrl: 'https://huggingface.co',
     logoUrl: '/logos/hugging-face.svg',
+    valuationUSD: 4_500_000_000,
+    valuationType: ValuationType.PRIVATE,
+    valuationAsOf: new Date('2023-08-24'),
+    valuationSource: 'Series D ($235M raised) backed by Google, Amazon, NVIDIA, IBM',
   },
   {
     slug: 'zoox',
@@ -139,22 +199,34 @@ const COMPANIES: CompanyData[] = [
     description: 'Autonomous vehicle company developing self-driving robotaxis. Acquired by Amazon in 2020 for $1.2 billion. Building purpose-built autonomous vehicles for ride-hailing.',
     websiteUrl: 'https://zoox.com',
     logoUrl: '/logos/zoox.svg',
+    valuationUSD: 1_200_000_000,
+    valuationType: ValuationType.ACQUISITION,
+    valuationAsOf: new Date('2020-06-26'),
+    valuationSource: 'Amazon acquisition price',
   },
   {
     slug: 'irobot',
     name: 'iRobot',
-    ticker: 'IRBT',
-    description: 'Consumer robotics company known for the Roomba vacuum cleaner. Pioneer in home robotics and AI-driven autonomous cleaning technology.',
+    ticker: 'IRBTQ',
+    description: 'Consumer robotics company known for the Roomba vacuum cleaner. Pioneer in home robotics. Filed Chapter 11 bankruptcy in December 2025 after Amazon acquisition fell through.',
     websiteUrl: 'https://irobot.com',
     logoUrl: '/logos/irobot.svg',
+    valuationUSD: 10_000_000,
+    valuationType: ValuationType.MARKET_CAP,
+    valuationAsOf: new Date('2026-01-14'),
+    valuationSource: 'OTC Markets (trading as IRBTQ post-bankruptcy)',
   },
   {
     slug: 'softbank',
     name: 'SoftBank',
     ticker: 'SFTBY',
-    description: 'Japanese conglomerate and investment holding company. Operates Vision Fund, one of the largest technology-focused venture capital funds. Chairman Masayoshi Son leads the Stargate Project.',
+    description: 'Japanese conglomerate and investment holding company. Operates Vision Fund, one of the largest technology-focused venture capital funds. Chairman Masayoshi Son leads the Stargate Project. Largest investor in OpenAI after Microsoft.',
     websiteUrl: 'https://softbank.com',
     logoUrl: '/logos/softbank.svg',
+    valuationUSD: 150_000_000_000,
+    valuationType: ValuationType.MARKET_CAP,
+    valuationAsOf: new Date('2026-01-08'),
+    valuationSource: 'Tokyo Stock Exchange (9984.T) - 4:1 stock split Jan 2026',
   },
   {
     slug: 'oracle',
@@ -163,13 +235,21 @@ const COMPANIES: CompanyData[] = [
     description: 'Enterprise software and cloud infrastructure company. Oracle Cloud Infrastructure (OCI) is a key Stargate Project partner, providing data center infrastructure for AI compute.',
     websiteUrl: 'https://oracle.com',
     logoUrl: '/logos/oracle.svg',
+    valuationUSD: 549_000_000_000,
+    valuationType: ValuationType.MARKET_CAP,
+    valuationAsOf: new Date('2026-01-16'),
+    valuationSource: 'NYSE market capitalization',
   },
   {
     slug: 'xai',
     name: 'xAI',
-    description: 'AI company founded by Elon Musk in 2023. Creator of Grok, a conversational AI assistant integrated with X (Twitter). Focused on building AI that advances understanding of the universe.',
+    description: 'AI company founded by Elon Musk in 2023. Creator of Grok, a conversational AI assistant integrated with X (Twitter). Acquired X Corp in 2025. One of the fastest-growing AI companies.',
     websiteUrl: 'https://x.ai',
     logoUrl: '/logos/xai.svg',
+    valuationUSD: 230_000_000_000,
+    valuationType: ValuationType.PRIVATE,
+    valuationAsOf: new Date('2026-01-06'),
+    valuationSource: '$20B funding round (investors: NVIDIA, Cisco, Fidelity, QIA, MGX)',
   },
   {
     slug: 'amd',
@@ -178,6 +258,10 @@ const COMPANIES: CompanyData[] = [
     description: 'Advanced Micro Devices is a semiconductor company producing EPYC server processors and Instinct MI series AI accelerators. Primary competitor to NVIDIA in the AI accelerator market.',
     websiteUrl: 'https://amd.com',
     logoUrl: '/logos/amd.svg',
+    valuationUSD: 377_000_000_000,
+    valuationType: ValuationType.MARKET_CAP,
+    valuationAsOf: new Date('2026-01-16'),
+    valuationSource: 'NASDAQ market capitalization',
   },
   {
     slug: 'intel',
@@ -186,6 +270,10 @@ const COMPANIES: CompanyData[] = [
     description: 'Semiconductor giant and CPU market leader. Operates Intel Foundry Services for chip manufacturing. Develops AI accelerators including Habana Gaudi series. Historically dominant in PC and server processors.',
     websiteUrl: 'https://intel.com',
     logoUrl: '/logos/intel.svg',
+    valuationUSD: 231_000_000_000,
+    valuationType: ValuationType.MARKET_CAP,
+    valuationAsOf: new Date('2026-01-15'),
+    valuationSource: 'NASDAQ market capitalization',
   },
   {
     slug: 'ibm',
@@ -194,6 +282,10 @@ const COMPANIES: CompanyData[] = [
     description: 'Enterprise technology and consulting company. Operates IBM Cloud and develops enterprise AI solutions including watsonx. Long history in computing with focus on hybrid cloud and AI for business.',
     websiteUrl: 'https://ibm.com',
     logoUrl: '/logos/ibm.svg',
+    valuationUSD: 286_000_000_000,
+    valuationType: ValuationType.MARKET_CAP,
+    valuationAsOf: new Date('2026-01-16'),
+    valuationSource: 'NYSE market capitalization',
   },
 ];
 
@@ -2532,6 +2624,10 @@ async function seedCompanies(): Promise<Map<string, string>> {
         description: company.description,
         websiteUrl: company.websiteUrl,
         logoUrl: company.logoUrl,
+        valuationUSD: company.valuationUSD,
+        valuationType: company.valuationType,
+        valuationAsOf: company.valuationAsOf,
+        valuationSource: company.valuationSource,
       },
       create: company,
     });

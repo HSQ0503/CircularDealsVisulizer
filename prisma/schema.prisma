@@ -65,20 +65,33 @@ enum DataStatus {
   UNKNOWN
 }
 
+enum ValuationType {
+  MARKET_CAP     // Public company market capitalization
+  PRIVATE        // Private company valuation from funding round
+  ACQUISITION    // Acquisition price (for acquired companies)
+}
+
 // ============================================================================
 // MODELS
 // ============================================================================
 
 model Company {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique
-  ticker      String?
-  description String?
-  websiteUrl  String?
-  logoUrl     String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String          @id @default(cuid())
+  name            String
+  slug            String          @unique
+  ticker          String?
+  description     String?
+  websiteUrl      String?
+  logoUrl         String?
+
+  // Valuation data
+  valuationUSD    Decimal?        @db.Decimal(20, 2)  // Valuation or market cap in USD
+  valuationType   ValuationType?  // Type of valuation
+  valuationAsOf   DateTime?       // When the valuation was recorded
+  valuationSource String?         // Source of the valuation data
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
   dealParties DealParty[]
 
