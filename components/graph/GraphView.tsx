@@ -2,8 +2,7 @@
 
 import { useRef, useCallback, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import type { NodeDTO, EdgeDTO, SuperEdgeDTO, FlowBreakdown } from '@/lib/graph/types';
-import { FlowType } from '@prisma/client';
+import type { NodeDTO, EdgeDTO } from '@/lib/graph/types';
 
 // Dynamically import ForceGraph2D to avoid SSR issues
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
@@ -45,6 +44,7 @@ interface GraphNode {
   name: string;
   slug: string;
   val: number;
+  valuationUSD: number | null;
   color: string;
   x?: number;
   y?: number;
@@ -110,6 +110,15 @@ function formatAmount(amount: number | null): string {
   return `$${amount.toLocaleString()}`;
 }
 
+// Format valuation for node labels (compact)
+function formatValuation(amount: number | null): string {
+  if (!amount) return '';
+  if (amount >= 1e12) return `$${(amount / 1e12).toFixed(1)}T`;
+  if (amount >= 1e9) return `$${(amount / 1e9).toFixed(0)}B`;
+  if (amount >= 1e6) return `$${(amount / 1e6).toFixed(0)}M`;
+  return `$${(amount / 1e3).toFixed(0)}K`;
+}
+
 // Color manipulation helpers
 function lightenColor(hex: string, percent: number): string {
   const num = parseInt(hex.replace('#', ''), 16);
@@ -129,19 +138,15 @@ function darkenColor(hex: string, percent: number): string {
   return `#${(1 << 24 | R << 16 | G << 8 | B).toString(16).slice(1)}`;
 }
 
-// Add alpha to any color format (hex or HSL)
+// Add alpha to hex color
 function colorWithAlpha(color: string, alphaHex: string): string {
-  // Convert hex alpha (00-FF) to decimal (0-1)
   const alpha = parseInt(alphaHex, 16) / 255;
-
   if (color.startsWith('hsl')) {
-    // Convert hsl(h, s%, l%) to hsla(h, s%, l%, a)
     const match = color.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/);
     if (match) {
       return `hsla(${match[1]}, ${match[2]}%, ${match[3]}%, ${alpha.toFixed(2)})`;
     }
   }
-  // For hex colors, just append the alpha
   return color + alphaHex;
 }
 
@@ -189,7 +194,7 @@ export function GraphView({
     nodeConnectivity.set(edge.to, (nodeConnectivity.get(edge.to) || 0) + 1);
   });
 
-  // Known company colors for visual consistency
+  // Get node color from predefined colors or generate one
   const getNodeColor = (slug: string): string => {
     return nodeColors[slug] || generateColor(slug);
   };
@@ -204,10 +209,12 @@ export function GraphView({
     return `hsl(${hue}, 70%, 55%)`;
   };
 
-  // Calculate node size based on connectivity (22-40 range)
-  const getNodeSize = (nodeId: string): number => {
-    const connectivity = nodeConnectivity.get(nodeId) || 0;
-    return 22 + Math.min(connectivity * 1.5, 18);
+  // Calculate node size based on valuation (20-60 range)
+  const getNodeSize = (valuationUSD: number | null): number => {
+    if (!valuationUSD) return 25; // Default for unknown
+    // Scale: $1B = 20, $100B = 35, $1T = 50, $5T = 60
+    const logScale = Math.log10(valuationUSD / 1e9);
+    return Math.max(20, Math.min(60, 20 + logScale * 10));
   };
 
   // Sort nodes by connectivity (most connected first)
@@ -230,10 +237,10 @@ export function GraphView({
       }
     });
   } else {
-    // Auto layout: core-periphery with inner/outer rings
+    // Auto layout: core-periphery with inner/outer rings (more spacing)
     const innerCount = Math.min(6, Math.ceil(nodes.length / 3));
-    const innerRadius = 220;
-    const outerRadius = 450;
+    const innerRadius = 300;
+    const outerRadius = 550;
 
     sortedNodes.forEach((node, i) => {
       const isInner = i < innerCount;
@@ -256,7 +263,8 @@ export function GraphView({
       id: node.id,
       name: node.name,
       slug: node.slug,
-      val: getNodeSize(node.id),
+      val: getNodeSize(node.valuationUSD ?? null),
+      valuationUSD: node.valuationUSD ?? null,
       color: getNodeColor(node.slug),
       // Fix positions so nodes don't move
       fx: pos.x,
@@ -282,15 +290,15 @@ export function GraphView({
     const currentIndex = pairIndices.get(pairKey) || 0;
     pairIndices.set(pairKey, currentIndex + 1);
 
-    // Spread edges evenly: -0.4 to +0.4 range
+    // Spread edges evenly: -0.2 to +0.2 range (cleaner, less curved)
     let curvature: number;
     if (totalEdges === 1) {
-      curvature = 0.2;
+      curvature = 0.15;
     } else {
-      // Spread from -0.4 to 0.4 based on index
-      const spread = 0.8; // Total range
+      // Spread from -0.2 to 0.2 based on index
+      const spread = 0.4; // Total range (was 0.8)
       const step = spread / (totalEdges - 1);
-      curvature = -0.4 + (currentIndex * step);
+      curvature = -0.2 + (currentIndex * step);
       // Flip direction for reverse edges to keep them on their side
       if (edge.from > edge.to) {
         curvature = -curvature;
@@ -303,21 +311,20 @@ export function GraphView({
       target: edge.to,
       edgeData: edge,
       color: flowColors[edge.flowType] || '#4C8DFF',
-      width: edge.totalAmountUSD ? Math.min(Math.log10(edge.totalAmountUSD / 1e9) + 4, 10) : 4,
+      width: edge.totalAmountUSD ? Math.min(Math.log10(edge.totalAmountUSD / 1e9) + 2.5, 6) : 2,
       curvature,
     };
   });
 
   const graphData = { nodes: graphNodes, links: graphLinks };
 
-  // Node canvas rendering with improved design
+  // Node canvas rendering with colorful gradient design
   const paintNode = useCallback((node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
     const n = node as GraphNode;
     const isSelected = n.id === selectedNodeId;
     const label = n.name;
     const fontSize = 14 / globalScale;
-    // Use node's val for dynamic sizing (val is set based on connectivity)
-    const nodeRadius = n.val || 40;
+    const nodeRadius = n.val || 25;
     const x = n.x || 0;
     const y = n.y || 0;
 
@@ -387,6 +394,15 @@ export function GraphView({
     // Main text
     ctx.fillStyle = isSelected ? '#ffffff' : '#E6EDF3';
     ctx.fillText(label, x, y + nodeRadius + fontSize + 5);
+
+    // Valuation label (if available)
+    const valLabel = formatValuation(n.valuationUSD);
+    if (valLabel) {
+      const smallFontSize = 11 / globalScale;
+      ctx.font = `500 ${smallFontSize}px system-ui, -apple-system, sans-serif`;
+      ctx.fillStyle = '#9CA3AF';
+      ctx.fillText(valLabel, x, y + nodeRadius + fontSize + smallFontSize + 10);
+    }
   }, [selectedNodeId]);
 
   // Handle node click
@@ -453,11 +469,22 @@ export function GraphView({
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, [tooltip.visible]);
 
-  // Custom link canvas rendering with hover/selection effects
+  // Custom link canvas rendering with hover/selection/node-connection highlighting
   const paintLink = useCallback((link: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
     const l = link as GraphLink;
     const isHovered = l.id === hoveredLinkId;
     const isSelected = l.id === selectedEdgeId;
+
+    // Check if this edge is connected to the selected node
+    const sourceId = typeof l.source === 'object' ? (l.source as GraphNode).id : l.source;
+    const targetId = typeof l.target === 'object' ? (l.target as GraphNode).id : l.target;
+    const isConnectedToSelectedNode = selectedNodeId && (sourceId === selectedNodeId || targetId === selectedNodeId);
+
+    // Determine if this edge should be highlighted
+    const isHighlighted = isHovered || isSelected || isConnectedToSelectedNode;
+
+    // If a node is selected but this edge is NOT connected to it, dim it significantly
+    const isDimmed = selectedNodeId && !isConnectedToSelectedNode;
 
     // Get source and target positions
     const source = typeof l.source === 'object' ? l.source : graphNodes.find(n => n.id === l.source);
@@ -480,15 +507,15 @@ export function GraphView({
     const cpX = midX + normalX;
     const cpY = midY + normalY;
 
-    // Draw glow effect for hovered/selected links
-    if (isHovered || isSelected) {
+    // Glow effect for highlighted links
+    if (isHighlighted && !isDimmed) {
       ctx.save();
       ctx.beginPath();
       ctx.moveTo(sx, sy);
       ctx.quadraticCurveTo(cpX, cpY, tx, ty);
       ctx.strokeStyle = l.color;
-      ctx.lineWidth = (l.width + 12) / globalScale;
-      ctx.globalAlpha = 0.3;
+      ctx.lineWidth = (l.width + 10) / globalScale;
+      ctx.globalAlpha = 0.35;
       ctx.stroke();
       ctx.restore();
     }
@@ -498,12 +525,23 @@ export function GraphView({
     ctx.moveTo(sx, sy);
     ctx.quadraticCurveTo(cpX, cpY, tx, ty);
     ctx.strokeStyle = l.color;
-    ctx.lineWidth = (isHovered || isSelected ? l.width + 2 : l.width) / globalScale;
-    ctx.globalAlpha = isHovered || isSelected ? 1 : 0.8;
+
+    // Adjust line width and opacity based on state
+    if (isDimmed) {
+      ctx.lineWidth = l.width / globalScale;
+      ctx.globalAlpha = 0.15; // Very dim for non-connected edges
+    } else if (isHighlighted) {
+      ctx.lineWidth = (l.width + 2) / globalScale;
+      ctx.globalAlpha = 1;
+    } else {
+      ctx.lineWidth = l.width / globalScale;
+      ctx.globalAlpha = 0.7;
+    }
+
     ctx.stroke();
     ctx.globalAlpha = 1;
 
-    // Draw arrow
+    // Draw arrow (smaller when dimmed)
     const arrowPos = 0.65;
     const t = arrowPos;
     const arrowX = (1-t)*(1-t)*sx + 2*(1-t)*t*cpX + t*t*tx;
@@ -514,7 +552,7 @@ export function GraphView({
     const tangentY = 2*(1-t)*(cpY-sy) + 2*t*(ty-cpY);
     const angle = Math.atan2(tangentY, tangentX);
 
-    const arrowLength = (isHovered || isSelected ? 28 : 25) / globalScale;
+    const arrowLength = (isHighlighted && !isDimmed ? 20 : 14) / globalScale;
     const arrowWidth = arrowLength * 0.5;
 
     ctx.save();
@@ -526,9 +564,10 @@ export function GraphView({
     ctx.lineTo(-arrowLength, -arrowWidth / 2);
     ctx.closePath();
     ctx.fillStyle = l.color;
+    ctx.globalAlpha = isDimmed ? 0.15 : 1;
     ctx.fill();
     ctx.restore();
-  }, [hoveredLinkId, selectedEdgeId, graphNodes]);
+  }, [hoveredLinkId, selectedEdgeId, selectedNodeId, graphNodes]);
 
   // Zoom to fit on mount (nodes are fixed, no simulation needed)
   useEffect(() => {

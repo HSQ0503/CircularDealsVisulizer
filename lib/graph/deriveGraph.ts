@@ -79,6 +79,7 @@ export async function deriveGraph(
     ticker: c.ticker,
     description: c.description,
     logoUrl: c.logoUrl,
+    valuationUSD: c.valuationUSD ? Number(c.valuationUSD) : null,
   }));
 
   // ============================================================================

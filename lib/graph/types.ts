@@ -15,6 +15,7 @@ export interface NodeDTO {
   ticker?: string | null;
   description?: string | null;
   logoUrl?: string | null;
+  valuationUSD?: number | null;
 }
 
 // ============================================================================
