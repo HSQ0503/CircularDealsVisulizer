@@ -120,6 +120,46 @@ export interface LoopDTO {
 }
 
 // ============================================================================
+// MULTI-PARTY CYCLE (3+ Companies)
+// ============================================================================
+
+export interface CycleNodeDTO {
+  companyId: string;
+  companyName: string;
+  companySlug: string;
+}
+
+export interface MultiPartyCycleDTO {
+  id: string;                    // Canonical ID: sorted slugs joined by '--'
+  length: number;                // Number of companies (3, 4, or 5)
+
+  // Ordered path through the cycle
+  path: CycleNodeDTO[];
+
+  // Edges in order (path[0]→path[1], path[1]→path[2], ..., path[n-1]→path[0])
+  edges: EdgeDTO[];
+
+  // Aggregated metrics
+  totalValue: number;            // Sum of all edge amounts in USD
+  minEdgeValue: number | null;   // Bottleneck: smallest edge amount
+  avgConfidence: number;         // Average confidence across all edges
+
+  // Scoring components (all 0-1)
+  flowCoherence: number;         // How complementary are flow types
+  valueBalance: number;          // How balanced are edge values
+  lengthPenalty: number;         // Shorter cycles score higher (1/sqrt(length-1))
+  cycleScore: number;            // Composite score
+
+  // Metadata
+  dominantFlowType: FlowType;    // Most common flow type in cycle
+  dealCount: number;             // Total deals across all edges
+  hasIncompleteData: boolean;    // true if any edge has null amount
+
+  // Optional curation
+  curatedNarrative?: string;     // Human-written description for featured cycles
+}
+
+// ============================================================================
 // HUB SCORE (Company-Level Circularity)
 // ============================================================================
 
@@ -147,7 +187,8 @@ export interface GraphResponse {
   nodes: NodeDTO[];
   edges: EdgeDTO[];
   dealsById: Record<string, DealDTO>;
-  loops: LoopDTO[];              // Detected loops with scores
+  loops: LoopDTO[];              // Detected 2-party loops with scores
+  multiPartyCycles: MultiPartyCycleDTO[];  // Detected 3+ party cycles
   hubScores: HubScoreDTO[];      // Company-level circularity scores
 }
 

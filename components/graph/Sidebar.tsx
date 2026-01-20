@@ -1,6 +1,6 @@
 'use client';
 
-import type { NodeDTO, EdgeDTO, DealDTO, SuperEdgeDTO, LoopDTO } from '@/lib/graph/types';
+import type { NodeDTO, EdgeDTO, DealDTO, SuperEdgeDTO, LoopDTO, HubScoreDTO, MultiPartyCycleDTO } from '@/lib/graph/types';
 import { DealCard } from './DealCard';
 
 interface SidebarProps {
@@ -11,6 +11,8 @@ interface SidebarProps {
   dealsById: Record<string, DealDTO>;
   nodes: NodeDTO[];
   loops?: LoopDTO[];
+  multiPartyCycles?: MultiPartyCycleDTO[];
+  hubScores?: HubScoreDTO[];
   onClose: () => void;
 }
 
@@ -21,13 +23,28 @@ const flowTypeColors: Record<string, string> = {
   EQUITY: 'text-flow-equity',
 };
 
-export function Sidebar({ selectedNode, selectedEdge, edges, dealsById, nodes, loops = [], onClose }: SidebarProps) {
+export function Sidebar({ selectedNode, selectedEdge, edges, dealsById, nodes, loops = [], multiPartyCycles = [], hubScores = [], onClose }: SidebarProps) {
   const nodeMap = new Map(nodes.map(n => [n.id, n]));
+  const hubScoreMap = new Map(hubScores.map(hs => [hs.companyId, hs]));
 
-  // Find if the selected edge is part of a loop
+  // Find if the selected edge is part of a 2-party loop
   const findLoopForEdge = (edge: EdgeDTO): LoopDTO | undefined => {
     return loops.find(loop =>
       (loop.edge1.id === edge.id || loop.edge2.id === edge.id)
+    );
+  };
+
+  // Find multi-party cycles that include this edge
+  const findMultiPartyCyclesForEdge = (edge: EdgeDTO): MultiPartyCycleDTO[] => {
+    return multiPartyCycles.filter(cycle =>
+      cycle.edges.some(e => e.id === edge.id)
+    );
+  };
+
+  // Find multi-party cycles that include this node
+  const findMultiPartyCyclesForNode = (node: NodeDTO): MultiPartyCycleDTO[] => {
+    return multiPartyCycles.filter(cycle =>
+      cycle.path.some(p => p.companyId === node.id)
     );
   };
 
@@ -58,6 +75,7 @@ export function Sidebar({ selectedNode, selectedEdge, edges, dealsById, nodes, l
 
     const outgoingEdges = connectedEdges.filter(e => e.from === selectedNode.id);
     const incomingEdges = connectedEdges.filter(e => e.to === selectedNode.id);
+    const hubScore = hubScoreMap.get(selectedNode.id);
 
     return (
       <div className="h-full flex flex-col animate-fade-in">
@@ -83,6 +101,62 @@ export function Sidebar({ selectedNode, selectedEdge, edges, dealsById, nodes, l
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          {/* Hub Score */}
+          {hubScore && hubScore.loopCount > 0 && (
+            <div className="p-4 bg-surface-2 rounded-lg border border-border-subtle">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  <span className="text-sm font-semibold text-text">Hub Score</span>
+                </div>
+                <span className={`font-mono text-xl font-bold ${hubScore.normalizedHubScore >= 0.7 ? 'text-success' : hubScore.normalizedHubScore >= 0.4 ? 'text-warning' : 'text-text-muted'}`}>
+                  {hubScore.hubScore.toFixed(2)}
+                </span>
+              </div>
+              <p className="text-xs text-text-muted mb-3">
+                Measures systemic centrality in circular flows. Higher scores indicate participation in more/stronger loops.
+              </p>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="p-2 bg-surface rounded">
+                  <p className="text-lg font-semibold text-text">{hubScore.loopCount}</p>
+                  <p className="text-xs text-text-faint">Loops</p>
+                </div>
+                <div className="p-2 bg-surface rounded">
+                  <p className="text-lg font-semibold text-text">{hubScore.avgLoopScore.toFixed(2)}</p>
+                  <p className="text-xs text-text-faint">Avg Score</p>
+                </div>
+                <div className="p-2 bg-surface rounded">
+                  <p className="text-lg font-semibold text-text">{hubScore.totalCirculation > 0 ? formatUSD(hubScore.totalCirculation) : '—'}</p>
+                  <p className="text-xs text-text-faint">Circulation</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Multi-Party Cycles */}
+          {(() => {
+            const nodeCycles = findMultiPartyCyclesForNode(selectedNode);
+            if (nodeCycles.length === 0) return null;
+            return (
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-text-muted uppercase tracking-wide flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Multi-Party Cycles ({nodeCycles.length})
+                </h3>
+                {nodeCycles.slice(0, 5).map(cycle => (
+                  <CycleSummary key={cycle.id} cycle={cycle} />
+                ))}
+                {nodeCycles.length > 5 && (
+                  <p className="text-xs text-text-faint">+{nodeCycles.length - 5} more cycles</p>
+                )}
+              </div>
+            );
+          })()}
+
           {/* Outgoing */}
           {outgoingEdges.length > 0 && (
             <div className="space-y-3">
@@ -170,7 +244,7 @@ export function Sidebar({ selectedNode, selectedEdge, edges, dealsById, nodes, l
                   <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
-                  <span className="text-sm font-medium text-primary">Part of Circular Flow</span>
+                  <span className="text-sm font-medium text-primary">Part of 2-Party Loop</span>
                 </div>
                 <span className={`font-mono text-lg font-bold ${loop.loopScore >= 0.7 ? 'text-success' : loop.loopScore >= 0.5 ? 'text-warning' : 'text-text-muted'}`}>
                   {loop.loopScore.toFixed(2)}
@@ -189,6 +263,25 @@ export function Sidebar({ selectedNode, selectedEdge, edges, dealsById, nodes, l
               )}
             </div>
           )}
+
+          {/* Multi-Party Cycles */}
+          {(() => {
+            const edgeCycles = findMultiPartyCyclesForEdge(selectedEdge);
+            if (edgeCycles.length === 0) return null;
+            return (
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center gap-2 text-sm font-medium text-warning">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  Part of {edgeCycles.length} Multi-Party Cycle{edgeCycles.length > 1 ? 's' : ''}
+                </div>
+                {edgeCycles.slice(0, 3).map(cycle => (
+                  <CycleSummary key={cycle.id} cycle={cycle} compact />
+                ))}
+              </div>
+            );
+          })()}
 
           {/* Stats */}
           <div className="grid grid-cols-2 gap-3 mt-4">
@@ -253,6 +346,56 @@ function EdgeSummary({ edge, nodeMap, direction }: EdgeSummaryProps) {
           <span className="text-xs text-text-muted">• {formatUSD(edge.totalAmountUSD)}</span>
         )}
       </div>
+    </div>
+  );
+}
+
+interface CycleSummaryProps {
+  cycle: MultiPartyCycleDTO;
+  compact?: boolean;
+}
+
+function CycleSummary({ cycle, compact = false }: CycleSummaryProps) {
+  // Build the path string: A → B → C → A
+  const pathString = [...cycle.path, cycle.path[0]]
+    .map(p => p.companyName)
+    .join(' → ');
+
+  if (compact) {
+    return (
+      <div className="p-2 bg-warning/10 border border-warning/30 rounded text-xs">
+        <div className="flex items-center justify-between mb-1">
+          <span className="font-medium text-text">{cycle.length}-Party Cycle</span>
+          <span className="font-mono text-warning">{cycle.cycleScore.toFixed(2)}</span>
+        </div>
+        <p className="text-text-muted truncate">{pathString}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-3 bg-surface-2 rounded-lg border border-warning/30">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <span className={`badge ${getFlowBadge(cycle.dominantFlowType)}`}>
+            {cycle.dominantFlowType.replace('_', ' ')}
+          </span>
+          <span className="text-xs text-text-muted">{cycle.length} companies</span>
+        </div>
+        <span className={`font-mono text-sm font-bold ${cycle.cycleScore >= 0.7 ? 'text-success' : cycle.cycleScore >= 0.5 ? 'text-warning' : 'text-text-muted'}`}>
+          {cycle.cycleScore.toFixed(2)}
+        </span>
+      </div>
+      <p className="text-sm text-text mb-2">{pathString}</p>
+      <div className="flex items-center gap-4 text-xs text-text-muted">
+        {cycle.totalValue > 0 && (
+          <span>Total: <span className="text-text">{formatUSD(cycle.totalValue)}</span></span>
+        )}
+        <span>{cycle.dealCount} deals</span>
+      </div>
+      {cycle.curatedNarrative && (
+        <p className="text-xs text-text-muted mt-2 italic">{cycle.curatedNarrative}</p>
+      )}
     </div>
   );
 }

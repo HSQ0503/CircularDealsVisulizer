@@ -446,6 +446,8 @@ function GraphPageContent() {
               dealsById={graphData.dealsById}
               nodes={graphData.nodes}
               loops={graphData.loops}
+              multiPartyCycles={graphData.multiPartyCycles}
+              hubScores={graphData.hubScores}
               onClose={handleClearSelection}
             />
           )}

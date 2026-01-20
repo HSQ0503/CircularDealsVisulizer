@@ -5,7 +5,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { DealType, FlowType, FlowDirection, PartyRole, Prisma } from '@prisma/client';
-import type { GraphResponse, NodeDTO, EdgeDTO, DealDTO, GraphFilters, SuperEdgeDTO, FlowBreakdown, LoopDTO, HubScoreDTO } from './types';
+import type { GraphResponse, NodeDTO, EdgeDTO, DealDTO, GraphFilters, SuperEdgeDTO, FlowBreakdown, LoopDTO, HubScoreDTO, MultiPartyCycleDTO, CycleNodeDTO } from './types';
 
 // ============================================================================
 // MAIN FUNCTION
@@ -205,12 +205,18 @@ export async function deriveGraph(
   const loops = detectLoops(edges, nodes);
 
   // ============================================================================
+  // DETECT MULTI-PARTY CYCLES (3+ Companies)
+  // ============================================================================
+
+  const multiPartyCycles = detectMultiPartyCycles(edges, nodes);
+
+  // ============================================================================
   // CALCULATE HUB SCORES
   // ============================================================================
 
-  const hubScores = calculateHubScores(loops, nodes);
+  const hubScores = calculateHubScores(loops, multiPartyCycles, nodes);
 
-  return { nodes, edges, dealsById, loops, hubScores };
+  return { nodes, edges, dealsById, loops, multiPartyCycles, hubScores };
 }
 
 // ============================================================================
@@ -368,7 +374,11 @@ function calculateLoopScore(edge1: EdgeDTO, edge2: EdgeDTO): number {
 // HUB SCORE CALCULATION
 // ============================================================================
 
-function calculateHubScores(loops: LoopDTO[], nodes: NodeDTO[]): HubScoreDTO[] {
+function calculateHubScores(
+  loops: LoopDTO[],
+  multiPartyCycles: MultiPartyCycleDTO[],
+  nodes: NodeDTO[]
+): HubScoreDTO[] {
   // Map: companyId -> { scores[], circulation[], loopIds[] }
   const companyData = new Map<string, {
     node: NodeDTO;
@@ -387,7 +397,7 @@ function calculateHubScores(loops: LoopDTO[], nodes: NodeDTO[]): HubScoreDTO[] {
     });
   }
 
-  // Aggregate from loops
+  // Aggregate from 2-party loops
   for (const loop of loops) {
     const company1Data = companyData.get(loop.company1.id);
     const company2Data = companyData.get(loop.company2.id);
@@ -402,6 +412,18 @@ function calculateHubScores(loops: LoopDTO[], nodes: NodeDTO[]): HubScoreDTO[] {
       company2Data.loopScores.push(loop.loopScore);
       company2Data.circulations.push(loop.totalCirculation);
       company2Data.loopIds.push(loop.id);
+    }
+  }
+
+  // Aggregate from multi-party cycles (3+ companies)
+  for (const cycle of multiPartyCycles) {
+    for (const node of cycle.path) {
+      const data = companyData.get(node.companyId);
+      if (data) {
+        data.loopScores.push(cycle.cycleScore);
+        data.circulations.push(cycle.totalValue);
+        data.loopIds.push(cycle.id);
+      }
     }
   }
 
@@ -435,4 +457,234 @@ function calculateHubScores(loops: LoopDTO[], nodes: NodeDTO[]): HubScoreDTO[] {
 
   // Sort by hub score descending
   return hubScores.sort((a, b) => b.hubScore - a.hubScore);
+}
+
+// ============================================================================
+// MULTI-PARTY CYCLE DETECTION (3+ Companies)
+// ============================================================================
+
+function detectMultiPartyCycles(
+  edges: EdgeDTO[],
+  nodes: NodeDTO[],
+  maxLength: number = 5
+): MultiPartyCycleDTO[] {
+  // Build adjacency list: nodeId -> outgoing edges
+  const adjacency = new Map<string, EdgeDTO[]>();
+  for (const edge of edges) {
+    if (!adjacency.has(edge.from)) adjacency.set(edge.from, []);
+    adjacency.get(edge.from)!.push(edge);
+  }
+
+  // Node lookup
+  const nodeMap = new Map(nodes.map(n => [n.id, n]));
+
+  // Store found cycles by canonical ID to deduplicate
+  const foundCycles = new Map<string, MultiPartyCycleDTO>();
+
+  // DFS from each node to find cycles
+  for (const startNode of nodes) {
+    const path: string[] = [];
+    const edgePath: EdgeDTO[] = [];
+
+    dfs(startNode.id, startNode.id, path, edgePath);
+  }
+
+  function dfs(
+    current: string,
+    target: string,
+    path: string[],
+    edgePath: EdgeDTO[]
+  ): void {
+    // Found a cycle back to start (minimum length 3)
+    if (path.length >= 3 && current === target) {
+      const cycle = createCycle(target, path, edgePath, nodeMap);
+      if (cycle && !foundCycles.has(cycle.id)) {
+        foundCycles.set(cycle.id, cycle);
+      }
+      return;
+    }
+
+    // Max depth reached
+    if (path.length >= maxLength) return;
+
+    // Get outgoing edges from current node
+    const outEdges = adjacency.get(current) || [];
+
+    for (const edge of outEdges) {
+      const next = edge.to;
+
+      // Can revisit target to close cycle, skip other visited nodes
+      if (next !== target && path.includes(next)) continue;
+
+      path.push(next);
+      edgePath.push(edge);
+
+      dfs(next, target, path, edgePath);
+
+      // Backtrack
+      path.pop();
+      edgePath.pop();
+    }
+  }
+
+  // Convert to array and sort by score
+  return Array.from(foundCycles.values())
+    .sort((a, b) => b.cycleScore - a.cycleScore);
+}
+
+function createCycle(
+  startNodeId: string,
+  path: string[],
+  edgePath: EdgeDTO[],
+  nodeMap: Map<string, NodeDTO>
+): MultiPartyCycleDTO | null {
+  // Reconstruct the true path: start → path[0] → ... → path[n-2]
+  // The last element in path is the start node again (when cycle closes), so exclude it
+  const truePath = [startNodeId, ...path.slice(0, -1)];
+
+  if (truePath.length < 3 || edgePath.length < 3) return null;
+
+  // Create canonical ID (sorted slugs)
+  const slugs = truePath.map(id => nodeMap.get(id)?.slug || id);
+  const canonicalId = canonicalizeCycleId(slugs);
+
+  // Build path with company info
+  const cyclePath: CycleNodeDTO[] = truePath.map(id => {
+    const node = nodeMap.get(id);
+    return {
+      companyId: id,
+      companyName: node?.name || 'Unknown',
+      companySlug: node?.slug || id,
+    };
+  });
+
+  // Calculate metrics
+  const amounts = edgePath
+    .map(e => e.totalAmountUSD)
+    .filter((a): a is number => a !== null && a > 0);
+
+  const totalValue = amounts.reduce((sum, a) => sum + a, 0);
+  const minEdgeValue = amounts.length > 0 ? Math.min(...amounts) : null;
+  const hasIncompleteData = edgePath.some(e => e.totalAmountUSD === null);
+
+  const avgConfidence = edgePath.reduce((sum, e) => sum + (e.avgConfidence || 3), 0) / edgePath.length;
+
+  // Calculate scoring components
+  const flowCoherence = calculateFlowCoherence(edgePath);
+  const valueBalance = calculateCycleValueBalance(amounts);
+  const valueMagnitude = calculateValueMagnitude(totalValue);
+
+  // Length penalty: shorter cycles are more concerning
+  // 3-cycle: 0.71, 4-cycle: 0.58, 5-cycle: 0.50
+  const lengthPenalty = 1 / Math.sqrt(truePath.length - 1);
+
+  // Composite score - emphasizes structural properties over raw scale
+  const cycleScore = (
+    0.30 * flowCoherence +
+    0.25 * valueBalance +
+    0.10 * valueMagnitude +
+    0.20 * (avgConfidence / 5) +
+    0.15 * lengthPenalty
+  );
+
+  // Dominant flow type
+  const flowCounts = new Map<FlowType, number>();
+  for (const edge of edgePath) {
+    flowCounts.set(edge.flowType, (flowCounts.get(edge.flowType) || 0) + 1);
+  }
+  let dominantFlowType: FlowType = FlowType.MONEY;
+  let maxCount = 0;
+  for (const [flowType, count] of flowCounts) {
+    if (count > maxCount) {
+      maxCount = count;
+      dominantFlowType = flowType;
+    }
+  }
+
+  // Total deals
+  const dealCount = edgePath.reduce((sum, e) => sum + e.dealIds.length, 0);
+
+  return {
+    id: canonicalId,
+    length: truePath.length,
+    path: cyclePath,
+    edges: edgePath,
+    totalValue,
+    minEdgeValue,
+    avgConfidence,
+    flowCoherence,
+    valueBalance,
+    lengthPenalty,
+    cycleScore,
+    dominantFlowType,
+    dealCount,
+    hasIncompleteData,
+  };
+}
+
+function canonicalizeCycleId(slugs: string[]): string {
+  // Find the lexicographically smallest rotation
+  const n = slugs.length;
+  let minStr = slugs.join('--');
+
+  for (let i = 1; i < n; i++) {
+    const rotation = [...slugs.slice(i), ...slugs.slice(0, i)];
+    const rotStr = rotation.join('--');
+    if (rotStr < minStr) {
+      minStr = rotStr;
+    }
+  }
+
+  return minStr;
+}
+
+function calculateFlowCoherence(edges: EdgeDTO[]): number {
+  const flowCounts = new Map<FlowType, number>();
+  for (const edge of edges) {
+    flowCounts.set(edge.flowType, (flowCounts.get(edge.flowType) || 0) + 1);
+  }
+
+  const uniqueTypes = flowCounts.size;
+
+  // Complementary flows score higher (e.g., MONEY going in, SERVICE going out)
+  const hasMoney = flowCounts.has(FlowType.MONEY);
+  const hasService = flowCounts.has(FlowType.SERVICE);
+  const hasCompute = flowCounts.has(FlowType.COMPUTE_HARDWARE);
+
+  // Best: complementary pairs (investment + cloud/hardware return)
+  if ((hasMoney && hasService) || (hasMoney && hasCompute)) {
+    return 1.0;
+  }
+
+  // Good: all same type (clear circular flow)
+  if (uniqueTypes === 1) {
+    return 0.7;
+  }
+
+  // Mixed but not complementary
+  return 0.5;
+}
+
+function calculateCycleValueBalance(amounts: number[]): number {
+  if (amounts.length < 2) return 0.5;
+
+  const min = Math.min(...amounts);
+  const max = Math.max(...amounts);
+
+  if (max === 0) return 0.5;
+
+  // Using log scale since values can span orders of magnitude
+  // Perfect balance = 1.0, 1000x difference = 0
+  const logRatio = Math.log10(max / min);
+  return Math.max(0, 1 - (logRatio / 3));
+}
+
+function calculateValueMagnitude(totalValue: number): number {
+  // Score based on total value
+  // $0 = 0, $1B = 0.5, $100B = 0.8, $1T = 1.0
+  if (totalValue <= 0) return 0;
+
+  const logValue = Math.log10(totalValue);
+  // $1M (6) = 0, $1T (12) = 1.0
+  return Math.min(1, Math.max(0, (logValue - 6) / 6));
 }

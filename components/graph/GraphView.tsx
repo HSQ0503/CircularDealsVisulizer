@@ -99,6 +99,13 @@ const nodeColors: Record<string, string> = {
   amd: '#00BCD4',
   intel: '#0071C5',
   ibm: '#1F70C1',
+  // Supply chain companies
+  tsmc: '#E31937',           // TSMC red
+  'sk-hynix': '#003DA5',     // SK blue
+  micron: '#00AED6',         // Micron cyan
+  // Investors
+  blackstone: '#000000',     // Blackstone black
+  mgx: '#C9A227',            // MGX gold (UAE)
 };
 
 // Format currency amount
