@@ -118,7 +118,7 @@ export function Sidebar({ selectedNode, selectedEdge, edges, dealsById, nodes, l
               <p className="text-xs text-text-muted mb-3">
                 Measures systemic centrality in circular flows. Higher scores indicate participation in more/stronger loops.
               </p>
-              <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="grid grid-cols-2 gap-2 text-center">
                 <div className="p-2 bg-surface rounded">
                   <p className="text-lg font-semibold text-text">{hubScore.loopCount}</p>
                   <p className="text-xs text-text-faint">Loops</p>
@@ -126,10 +126,6 @@ export function Sidebar({ selectedNode, selectedEdge, edges, dealsById, nodes, l
                 <div className="p-2 bg-surface rounded">
                   <p className="text-lg font-semibold text-text">{hubScore.avgLoopScore.toFixed(2)}</p>
                   <p className="text-xs text-text-faint">Avg Score</p>
-                </div>
-                <div className="p-2 bg-surface rounded">
-                  <p className="text-lg font-semibold text-text">{hubScore.totalCirculation > 0 ? formatUSD(hubScore.totalCirculation) : '—'}</p>
-                  <p className="text-xs text-text-faint">Circulation</p>
                 </div>
               </div>
             </div>
@@ -256,11 +252,6 @@ export function Sidebar({ selectedNode, selectedEdge, edges, dealsById, nodes, l
                   <span className="text-text-faint ml-1">({formatUSD(otherEdge.totalAmountUSD)})</span>
                 )}
               </p>
-              {loop.totalCirculation > 0 && (
-                <p className="text-xs text-text-muted mt-1">
-                  Total circulation: <span className="text-text">{formatUSD(loop.totalCirculation)}</span>
-                </p>
-              )}
             </div>
           )}
 

@@ -10,6 +10,8 @@
  */
 
 import { PrismaClient, DealType, FlowType, PartyRole, FlowDirection, SourceType, DataStatus, ValuationType } from '@prisma/client';
+import { deriveGraph } from '../lib/graph/deriveGraph';
+import { computeNullModel } from '../lib/graph/nullModel';
 
 const prisma = new PrismaClient({
   datasourceUrl: process.env.DATABASE_URL,
@@ -351,6 +353,18 @@ const COMPANIES: CompanyData[] = [
     valuationType: ValuationType.PRIVATE,
     valuationAsOf: new Date('2025-01-21'),
     valuationSource: 'Reported AI infrastructure mandate',
+  },
+  {
+    slug: 'salesforce',
+    name: 'Salesforce',
+    ticker: 'CRM',
+    description: 'Enterprise cloud software company and CRM market leader. Building Agentforce AI platform powered by partnerships with OpenAI and Anthropic. Active AI investor through Salesforce Ventures.',
+    websiteUrl: 'https://salesforce.com',
+    logoUrl: '/logos/salesforce.svg',
+    valuationUSD: 320_000_000_000,
+    valuationType: ValuationType.MARKET_CAP,
+    valuationAsOf: new Date('2026-01-16'),
+    valuationSource: 'NYSE market capitalization',
   },
 ];
 
@@ -2867,6 +2881,143 @@ const DEALS: DealData[] = [
       },
     ],
   },
+  // ==================== NVIDIA ↔ Microsoft: NVIDIA uses Azure ====================
+  {
+    slug: 'nvidia-azure-cloud-usage-2024',
+    title: 'NVIDIA Utilizes Microsoft Azure for AI Research',
+    summary: 'NVIDIA announced a multi-year collaboration to utilize Microsoft Azure\'s scalable virtual machine instances to research and accelerate advances in generative AI. NVIDIA DGX Cloud is hosted on Azure, and NVIDIA Omniverse Cloud Services run on Azure infrastructure. This creates a bidirectional relationship where Microsoft buys NVIDIA GPUs while NVIDIA uses Azure services.',
+    dealType: DealType.CLOUD_COMMITMENT,
+    flowType: FlowType.SERVICE,
+    announcedAt: new Date('2024-03-18'),
+    amountText: 'Multi-year cloud services agreement',
+    dataStatus: DataStatus.CONFIRMED,
+    tags: ['cloud', 'azure', 'dgx-cloud', 'omniverse', 'partnership'],
+    parties: [
+      { companySlug: 'nvidia', role: PartyRole.CUSTOMER, direction: FlowDirection.OUTFLOW },
+      { companySlug: 'microsoft', role: PartyRole.SUPPLIER, direction: FlowDirection.INFLOW },
+    ],
+    sources: [
+      {
+        sourceType: SourceType.PRESS_RELEASE,
+        publisher: 'NVIDIA',
+        url: 'https://nvidianews.nvidia.com/news/nvidia-microsoft-accelerate-cloud-enterprise-ai',
+        publishedAt: new Date('2024-03-18'),
+        excerpt: 'NVIDIA will utilize Azure\'s scalable virtual machine instances to research and further accelerate advances in generative AI',
+        reliability: 5,
+        confidence: 5,
+      },
+    ],
+  },
+  // ==================== NVIDIA ↔ xAI: NVIDIA invests in xAI ====================
+  {
+    slug: 'nvidia-xai-investment-2025',
+    title: 'NVIDIA $2B Investment in xAI',
+    summary: 'NVIDIA invested up to $2 billion in Elon Musk\'s xAI as part of a $20 billion funding round. The investment uses a special purpose vehicle (SPV) structure combining equity and debt. The funds will be used to acquire NVIDIA GPUs for xAI\'s Colossus 2 data center in Memphis, deploying 300,000-550,000 NVIDIA GB200/GB300 chips.',
+    dealType: DealType.INVESTMENT,
+    flowType: FlowType.MONEY,
+    announcedAt: new Date('2025-10-15'),
+    amountUSD: 2_000_000_000,
+    amountText: 'Up to $2 billion equity investment',
+    dataStatus: DataStatus.CONFIRMED,
+    tags: ['investment', 'xai', 'colossus', 'gpu', 'data-center'],
+    parties: [
+      { companySlug: 'nvidia', role: PartyRole.INVESTOR, direction: FlowDirection.OUTFLOW },
+      { companySlug: 'xai', role: PartyRole.INVESTEE, direction: FlowDirection.INFLOW },
+    ],
+    sources: [
+      {
+        sourceType: SourceType.NEWS,
+        publisher: 'Yahoo Finance',
+        url: 'https://finance.yahoo.com/news/nvidia-reportedly-invest-2bn-elon-101712438.html',
+        publishedAt: new Date('2025-10-15'),
+        excerpt: 'Nvidia reportedly to invest up to $2bn in Elon Musk\'s xAI',
+        reliability: 4,
+        confidence: 4,
+      },
+    ],
+  },
+  // ==================== xAI ↔ NVIDIA: xAI buys NVIDIA GPUs ====================
+  {
+    slug: 'xai-nvidia-gpu-purchase-2025',
+    title: 'xAI $20B NVIDIA GPU Purchase for Colossus 2',
+    summary: 'xAI committed to purchasing $20 billion worth of NVIDIA GPUs (GB200 and GB300 chips) for its Colossus 2 data center in Memphis, Tennessee. The project will deploy 300,000-550,000 NVIDIA processors, scaling up from the existing 200,000-processor Colossus facility. This creates a bidirectional loop with NVIDIA\'s $2B investment in xAI.',
+    dealType: DealType.SUPPLY,
+    flowType: FlowType.COMPUTE_HARDWARE,
+    announcedAt: new Date('2025-10-15'),
+    amountUSD: 20_000_000_000,
+    amountText: '$20 billion GPU procurement',
+    dataStatus: DataStatus.CONFIRMED,
+    tags: ['gpu', 'colossus-2', 'gb200', 'gb300', 'data-center', 'memphis'],
+    parties: [
+      { companySlug: 'xai', role: PartyRole.CUSTOMER, direction: FlowDirection.OUTFLOW },
+      { companySlug: 'nvidia', role: PartyRole.SUPPLIER, direction: FlowDirection.INFLOW },
+    ],
+    sources: [
+      {
+        sourceType: SourceType.NEWS,
+        publisher: 'Tom\'s Hardware',
+        url: 'https://www.tomshardware.com/pc-components/gpus/nvidia-backs-20-billion-xai-chip-deal',
+        publishedAt: new Date('2025-10-15'),
+        excerpt: 'Nvidia reportedly signs another blockbuster AI supply deal, this time with Elon Musk\'s xAI',
+        reliability: 4,
+        confidence: 4,
+      },
+    ],
+  },
+  // ==================== Salesforce ↔ Anthropic: Salesforce invests ====================
+  {
+    slug: 'salesforce-anthropic-investment-2023',
+    title: 'Salesforce Investment in Anthropic Series C',
+    summary: 'Salesforce Ventures participated in Anthropic\'s $450 million Series C funding round in May 2023, alongside strategic investors including Google, SAP, Amazon, and Zoom Ventures. This investment established the foundation for Anthropic\'s integration into Salesforce\'s enterprise AI platform.',
+    dealType: DealType.INVESTMENT,
+    flowType: FlowType.MONEY,
+    announcedAt: new Date('2023-05-23'),
+    amountText: 'Part of $450M Series C round',
+    dataStatus: DataStatus.CONFIRMED,
+    tags: ['investment', 'series-c', 'ai-safety', 'enterprise'],
+    parties: [
+      { companySlug: 'salesforce', role: PartyRole.INVESTOR, direction: FlowDirection.OUTFLOW },
+      { companySlug: 'anthropic', role: PartyRole.INVESTEE, direction: FlowDirection.INFLOW },
+    ],
+    sources: [
+      {
+        sourceType: SourceType.NEWS,
+        publisher: 'TechCrunch',
+        url: 'https://techcrunch.com/2023/05/23/anthropic-raises-450m-series-c/',
+        publishedAt: new Date('2023-05-23'),
+        excerpt: 'Anthropic raises $450M Series C with Salesforce, Google, SAP, and others',
+        reliability: 5,
+        confidence: 5,
+      },
+    ],
+  },
+  // ==================== Anthropic ↔ Salesforce: Claude for Agentforce ====================
+  {
+    slug: 'anthropic-salesforce-agentforce-2025',
+    title: 'Anthropic Claude Integration in Salesforce Agentforce',
+    summary: 'Anthropic and Salesforce expanded their strategic partnership in October 2025. Claude became the foundational AI model for Salesforce\'s Agentforce 360 Platform, serving regulated industries including financial services, healthcare, and cybersecurity. Anthropic is the first LLM provider fully integrated within Salesforce\'s trust boundary. Salesforce also deployed Claude Code across its global engineering organization.',
+    dealType: DealType.PARTNERSHIP,
+    flowType: FlowType.SERVICE,
+    announcedAt: new Date('2025-10-14'),
+    amountText: 'Strategic technology partnership',
+    dataStatus: DataStatus.CONFIRMED,
+    tags: ['partnership', 'agentforce', 'claude', 'enterprise-ai', 'regulated-industries'],
+    parties: [
+      { companySlug: 'anthropic', role: PartyRole.SUPPLIER, direction: FlowDirection.INFLOW },
+      { companySlug: 'salesforce', role: PartyRole.CUSTOMER, direction: FlowDirection.OUTFLOW },
+    ],
+    sources: [
+      {
+        sourceType: SourceType.PRESS_RELEASE,
+        publisher: 'Salesforce',
+        url: 'https://www.salesforce.com/news/press-releases/2025/10/14/anthropic-regulated-industries-partnership-expansion-announcement/',
+        publishedAt: new Date('2025-10-14'),
+        excerpt: 'Anthropic and Salesforce Expand Strategic Partnership to Deliver Trusted AI for Regulated Industries',
+        reliability: 5,
+        confidence: 5,
+      },
+    ],
+  },
 ];
 
 // ============================================================================
@@ -2965,6 +3116,27 @@ async function seedDeals(companySlugToId: Map<string, string>): Promise<void> {
   }
 }
 
+async function computeAndStoreNullModel(): Promise<void> {
+  console.log('\n📊 Computing null model (500 iterations)...');
+  const graphData = await deriveGraph('all');
+
+  const result = await computeNullModel(
+    graphData.edges,
+    graphData.nodes,
+    graphData.loops,
+    graphData.multiPartyCycles,
+    graphData.hubScores,
+    { iterations: 500 }
+  );
+
+  console.log(`   ✓ Computed in ${result.networkStats.computeDurationMs}ms`);
+  console.log(`   ✓ Real loops: ${result.loops.real.loopCount}, Null mean: ${result.loops.null.loopCount.mean.toFixed(1)}`);
+  console.log(`   ✓ Loop z-score: ${result.loops.significance.loopCount.zScore.toFixed(2)}`);
+  console.log(`   ✓ Loop p-value: ${result.loops.significance.loopCount.pValue.toFixed(4)}`);
+  console.log(`   ✓ Real cycles: ${result.cycles.real.totalCycleCount}, Null mean: ${result.cycles.null.totalCycleCount.mean.toFixed(1)}`);
+  console.log(`   ✓ Cycle z-score: ${result.cycles.significance.totalCycleCount.zScore.toFixed(2)}`);
+}
+
 async function main() {
   console.log('🌱 Seeding database (additive mode)...\n');
 
@@ -2983,6 +3155,9 @@ async function main() {
 
   // Seed deals
   await seedDeals(companySlugToId);
+
+  // Compute null model for statistical significance
+  await computeAndStoreNullModel();
 
   console.log('\n🎉 Seeding complete!');
   console.log(`Total companies: ${companySlugToId.size}`);

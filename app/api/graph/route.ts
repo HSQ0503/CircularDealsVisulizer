@@ -9,6 +9,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { deriveGraph } from '@/lib/graph/deriveGraph';
+import { getLatestNullModelComparison } from '@/lib/graph/nullModel';
 import { DealType, FlowType } from '@prisma/client';
 import type { GraphFilters } from '@/lib/graph/types';
 
@@ -55,6 +56,13 @@ export async function GET(request: NextRequest) {
     }
 
     const graphData = await deriveGraph(companySlugs, filters);
+
+    // Optionally include null model comparison data
+    const includeNullModel = searchParams.get('includeNullModel') === 'true';
+    if (includeNullModel) {
+      const nullModel = await getLatestNullModelComparison();
+      return NextResponse.json({ ...graphData, nullModel });
+    }
 
     return NextResponse.json(graphData);
   } catch (error) {

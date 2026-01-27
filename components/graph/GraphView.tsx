@@ -106,6 +106,8 @@ const nodeColors: Record<string, string> = {
   // Investors
   blackstone: '#000000',     // Blackstone black
   mgx: '#C9A227',            // MGX gold (UAE)
+  // Enterprise software
+  salesforce: '#00A1E0',     // Salesforce blue
 };
 
 // Format currency amount

@@ -203,3 +203,59 @@ export interface GraphFilters {
   dateFrom?: string;
   dateTo?: string;
 }
+
+// ============================================================================
+// NULL MODEL (Statistical Significance Testing)
+// ============================================================================
+
+// Null model configuration
+export type NullModelConfig = {
+  iterations: number;
+  algorithm: 'configuration_model';
+  maxCycleLength: number;
+};
+
+// Distribution statistics
+export type DistributionStats = {
+  mean: number;
+  std: number;
+  min: number;
+  max: number;
+  p5: number;
+  p50: number;
+  p95: number;
+};
+
+// Significance metrics
+export type SignificanceMetrics = {
+  zScore: number;
+  pValue: number;
+  percentile: number;
+  isSignificant: boolean;
+};
+
+// Complete null model result
+export type NullModelComparison = {
+  runId: string;
+  computedAt: string;
+  config: NullModelConfig;
+  networkStats: { nodeCount: number; edgeCount: number; computeDurationMs: number };
+  loops: {
+    real: { loopCount: number; avgLoopScore: number; totalCirculation: number };
+    null: { loopCount: DistributionStats };
+    significance: { loopCount: SignificanceMetrics };
+  };
+  cycles: {
+    real: { cycle3Count: number; cycle4Count: number; cycle5Count: number; totalCycleCount: number; avgCycleScore: number };
+    null: { totalCycleCount: DistributionStats; cycle3Count: DistributionStats; cycle4Count: DistributionStats; cycle5Count: DistributionStats };
+    significance: { totalCycleCount: SignificanceMetrics };
+  };
+  hubs: Array<{
+    companyId: string;
+    companySlug: string;
+    companyName: string;
+    real: { hubScore: number; loopCount: number; normalizedScore: number };
+    null: { hubScore: DistributionStats };
+    significance: SignificanceMetrics;
+  }>;
+};

@@ -157,3 +157,95 @@ model Source {
 
   @@index([dealId])
 }
+
+// ============================================================================
+// NULL MODEL (Statistical Significance Testing)
+// ============================================================================
+
+model NullModelRun {
+  id                String   @id @default(cuid())
+  iterations        Int      @default(500)
+  algorithm         String   @default("configuration_model")
+  computedAt        DateTime @default(now())
+  computeDurationMs Int
+  edgeCount         Int
+  nodeCount         Int
+
+  loopStats  NullModelLoopStats?
+  cycleStats NullModelCycleStats?
+  hubStats   NullModelHubStats[]
+}
+
+model NullModelLoopStats {
+  id                    String       @id @default(cuid())
+  runId                 String       @unique
+  run                   NullModelRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  realLoopCount         Int
+  realAvgLoopScore      Float
+  realTotalCirculation  Float
+
+  nullLoopCountMean     Float
+  nullLoopCountStd      Float
+  nullLoopCountMin      Int
+  nullLoopCountMax      Int
+  nullLoopCountP5       Float
+  nullLoopCountP50      Float
+  nullLoopCountP95      Float
+
+  loopCountZScore       Float
+  loopCountPValue       Float
+  loopCountPercentile   Float
+}
+
+model NullModelCycleStats {
+  id                    String       @id @default(cuid())
+  runId                 String       @unique
+  run                   NullModelRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  realCycle3Count       Int
+  realCycle4Count       Int
+  realCycle5Count       Int
+  realTotalCycleCount   Int
+  realAvgCycleScore     Float
+
+  nullCycleCountMean    Float
+  nullCycleCountStd     Float
+  nullCycleCountMin     Int
+  nullCycleCountMax     Int
+  nullCycleCountP5      Float
+  nullCycleCountP50     Float
+  nullCycleCountP95     Float
+  nullCycle3CountMean   Float
+  nullCycle4CountMean   Float
+  nullCycle5CountMean   Float
+
+  cycleCountZScore      Float
+  cycleCountPValue      Float
+  cycleCountPercentile  Float
+}
+
+model NullModelHubStats {
+  id                  String       @id @default(cuid())
+  runId               String
+  run                 NullModelRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  companyId           String
+  companySlug         String
+
+  realHubScore        Float
+  realLoopCount       Int
+  realNormalizedScore Float
+
+  nullHubScoreMean    Float
+  nullHubScoreStd     Float
+  nullHubScoreP5      Float
+  nullHubScoreP95     Float
+
+  hubScoreZScore      Float
+  hubScorePValue      Float
+  hubScorePercentile  Float
+
+  @@unique([runId, companyId])
+  @@index([runId])
+}
