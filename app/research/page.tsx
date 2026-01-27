@@ -389,7 +389,7 @@ export default async function ResearchPage() {
             <div className="bg-surface-2 rounded-lg p-5 my-6 not-prose">
               <p className="text-xs font-bold text-text-muted uppercase tracking-widest mb-4">Definition: Cycle Score</p>
               <div className="font-mono text-sm text-text mb-4 text-center">
-                S(cycle) = 0.30·F + 0.25·B + 0.25·M + 0.20·C
+                S(cycle) = 0.30·F + 0.25·B + 0.10·M + 0.20·C + 0.15·L
               </div>
               <p className="text-text-muted text-sm mb-4">where:</p>
               <div className="space-y-3 text-sm">
@@ -424,13 +424,25 @@ export default async function ResearchPage() {
                     C = average confidence across all edges / 5
                   </p>
                 </div>
+                <div>
+                  <p className="text-text font-medium mb-1">Length Penalty (L)</p>
+                  <p className="text-text-muted">
+                    L = 1 / √(n - 1), where n is cycle length
+                  </p>
+                  <p className="text-text-faint text-xs mt-1">
+                    Shorter cycles receive higher scores: 3-cycle → 0.71, 4-cycle → 0.58, 5-cycle → 0.50.
+                    This reflects that tighter circular relationships are more indicative of coordinated behavior.
+                  </p>
+                </div>
               </div>
             </div>
 
             <p className="text-text-muted leading-relaxed">
-              The Cycle Score weights differ slightly from the Loop Score to account for the additional
-              complexity of multi-party structures, placing greater emphasis on value magnitude given that
-              longer cycles typically involve larger aggregate capital flows.
+              The Cycle Score weights differ from the Loop Score to account for the structural properties of
+              multi-party cycles. The length penalty (L) prioritizes shorter cycles, as a 3-company circular
+              arrangement represents a tighter, more direct form of interdependence than longer chains.
+              Value magnitude (M) receives reduced weight (0.10 vs 0.35 in loops) since multi-party cycles
+              naturally aggregate larger total values across more edges.
             </p>
 
             <h3 className="text-base font-semibold text-text mt-6 mb-3">3.8 Null Model for Statistical Significance</h3>
