@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { deriveGraph } from '@/lib/graph/deriveGraph';
+import { deriveGraph, runSensitivityAnalysis } from '@/lib/graph/deriveGraph';
 import { getLatestNullModelComparison } from '@/lib/graph/nullModel';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
@@ -38,6 +38,7 @@ function getScoreClass(score: number): string {
 export default async function ResearchPage() {
   const graphData = await deriveGraph('all');
   const nullModel = await getLatestNullModelComparison();
+  const sensitivityAnalysis = await runSensitivityAnalysis();
   const loops = graphData.loops;
   const multiPartyCycles = graphData.multiPartyCycles;
   const hubScores = graphData.hubScores;
@@ -91,11 +92,11 @@ export default async function ResearchPage() {
               creating closed loops of varying lengths. We introduce three complementary metrics: the <em>Loop Score</em>,
               which measures circularity between company pairs; the <em>Cycle Score</em>, which extends this analysis
               to multi-party cycles involving three or more companies; and the <em>Hub Score</em>, which aggregates
-              participation across all circular structures to identify systemically central entities. Analyzing {totalDeals} publicly
-              reported deals among {totalCompanies} companies from 2022–2025, we identify {totalCircularStructures} circular
+              participation across all circular structures to identify systemically central entities. Analyzing {totalDeals} deals
+              among a purposefully selected set of {totalCompanies} prominent AI, cloud, and semiconductor companies from 2022–2025, we identify {totalCircularStructures} circular
               structures: {loops.length} two-party loops and {multiPartyCycles.length} multi-party cycles. Our findings
-              reveal that circular patterns are pervasive in the AI ecosystem, with certain infrastructure providers
-              participating in over 100 distinct circular flows. We discuss implications for revenue recognition
+              reveal that circular patterns are prevalent among major AI companies in our sample, with certain infrastructure providers
+              participating in numerous circular flows. We discuss implications for revenue recognition
               analysis, valuation interdependence, systemic risk assessment, and market transparency.
             </p>
             <div className="research-keywords">
@@ -148,9 +149,9 @@ export default async function ResearchPage() {
                 this framework to detect and score multi-party cycles—circular flows involving three or more
                 companies—using depth-first search with a complementary Cycle Score metric. Fourth, we introduce
                 the Hub Score, which aggregates participation across both two-party loops and multi-party cycles
-                to identify systemically central entities. Fifth, we apply this methodology to a dataset
-                of {totalDeals} publicly reported deals, identifying {totalCircularStructures} circular structures
-                and the hub companies that occupy central positions in the network.
+                to identify systemically central entities. Fifth, we apply this methodology to a purposefully selected
+                dataset of {totalDeals} deals among prominent AI, cloud, and semiconductor companies, identifying {totalCircularStructures} circular structures
+                and the hub companies that occupy central positions within this network.
               </p>
             </div>
           </section>
@@ -167,9 +168,8 @@ export default async function ResearchPage() {
                 lending networks via direct balance sheet linkages—a mechanism we adapt to analyze how valuation
                 shocks might cascade through investor-investee relationships in AI deal networks. Gai &amp; Kapadia (2010)
                 extended this framework to show that highly interconnected nodes create systemic fragility; their
-                concept of institutions being &ldquo;too interconnected to fail&rdquo; directly informs our Hub Score
-                metric, which identifies companies whose participation in multiple circular flows creates analogous
-                concentration risk. Corporate board interlocks have been analyzed for governance implications
+                concept of interconnected institutions informs our Hub Score
+                metric, which quantifies the extent of a company&apos;s participation in circular flows within our sample. Corporate board interlocks have been analyzed for governance implications
                 (Mizruchi, 1996), while supply chain network analysis has emerged as a tool for understanding
                 firm-level risk propagation. Acemoglu et al. (2012) demonstrated that idiosyncratic shocks to
                 central firms can generate aggregate fluctuations when network connections are sufficiently
@@ -239,6 +239,15 @@ export default async function ResearchPage() {
                 including SEC filings (10-K, 8-K, S-1), official press releases, and financial news reporting
                 from Bloomberg, Reuters, CNBC, and The Information. Data collection covered the period from
                 January 2022 to January 2025.
+              </p>
+              <p>
+                Our sample comprises approximately {totalCompanies} major AI, cloud, and semiconductor companies selected
+                based on three criteria: (1) market leadership or valuation exceeding $1 billion,
+                (2) documented participation in AI-related deals during 2022–2025, and (3) publicly
+                verifiable deal information via SEC filings or press releases. This is a purposefully
+                selected sample of prominent industry participants, not a random sample of the AI ecosystem.
+                Findings should be interpreted as patterns among these specific companies rather than
+                population-level estimates.
               </p>
               <p>
                 Each deal record includes the following attributes:
@@ -370,9 +379,9 @@ export default async function ResearchPage() {
 
             <div className="research-prose">
               <p>
-                The weighting scheme (α = β = 0.35, γ = 0.30) was determined through sensitivity analysis,
-                balancing the importance of structural characteristics (diversity, balance) against data
-                quality considerations. Alternative weightings are discussed in Section 6.
+                The weighting scheme (α = β = 0.35, γ = 0.30) was selected to balance structural characteristics
+                (diversity, balance) against data quality considerations. We provide empirical sensitivity
+                analysis in Section 6.3, demonstrating ranking robustness across alternative weighting schemes.
               </p>
             </div>
 
@@ -721,9 +730,20 @@ export default async function ResearchPage() {
                   <p>
                     <strong>Null hypothesis:</strong> The observed loop and cycle counts
                     are consistent with what would emerge by chance in a random network with the same degree
-                    distribution. <strong>Alternative hypothesis:</strong> The AI industry
-                    exhibits significantly more circular patterns than random expectation, suggesting intentional
+                    distribution. <strong>Alternative hypothesis:</strong> These companies
+                    exhibit more circular patterns than random expectation, suggesting intentional
                     reciprocal structuring of deals.
+                  </p>
+                </div>
+
+                <div className="research-callout">
+                  <p className="research-callout-label">Interpretation Note</p>
+                  <p className="research-callout-text">
+                    Because our dataset is purposefully selected rather than randomly sampled,
+                    the following z-scores and p-values should be interpreted as comparisons to
+                    random graph baselines, not as inferential statistics about the broader AI
+                    industry. A high z-score indicates our observed patterns deviate from random
+                    expectation given this network&apos;s degree distribution.
                   </p>
                 </div>
 
@@ -783,9 +803,9 @@ export default async function ResearchPage() {
                           </span>
                         </td>
                         <td className="text-right research-table-mono">
-                          {formatPValue(nullModel.cycles.significance.totalCycleCount.pValue)}
+                          {formatPValue(nullModel.cycles.significance.totalCycleCount.pValueExact ?? nullModel.cycles.significance.totalCycleCount.pValue)}
                           <span className="research-score-medium" style={{ marginLeft: '0.25rem' }}>
-                            {getSignificanceStars(nullModel.cycles.significance.totalCycleCount.pValue)}
+                            {getSignificanceStars(nullModel.cycles.significance.totalCycleCount.pValueExact ?? nullModel.cycles.significance.totalCycleCount.pValue)}
                           </span>
                         </td>
                       </tr>
@@ -843,10 +863,10 @@ export default async function ResearchPage() {
                         loops is {((nullModel.loops.real.loopCount / nullModel.loops.null.loopCount.mean - 1) * 100).toFixed(0)}% higher than
                         random expectation (null mean = {nullModel.loops.null.loopCount.mean.toFixed(1)} ± {nullModel.loops.null.loopCount.std.toFixed(1)}).
                         With z = {nullModel.loops.significance.loopCount.zScore.toFixed(2)} and p {formatPValue(nullModel.loops.significance.loopCount.pValue)},
-                        we <strong>reject the null hypothesis</strong>. The probability of observing this many
-                        bidirectional relationships by chance is only {(nullModel.loops.significance.loopCount.pValue * 100).toFixed(1)}%.
-                        This provides strong evidence that AI companies form direct reciprocal relationships (investor↔customer,
-                        supplier↔client) at rates significantly exceeding random network formation.
+                        the observed patterns <strong>deviate substantially from random expectation</strong>. Only {(nullModel.loops.significance.loopCount.pValue * 100).toFixed(1)}%
+                        of randomly rewired networks with identical degree sequences exhibit this many bidirectional relationships.
+                        This indicates that these companies form direct reciprocal relationships (investor↔customer,
+                        supplier↔client) at rates exceeding what would occur in randomly rewired networks.
                       </>
                     ) : (
                       <>
@@ -854,55 +874,69 @@ export default async function ResearchPage() {
                         is consistent with random expectation (null mean = {nullModel.loops.null.loopCount.mean.toFixed(1)} ± {nullModel.loops.null.loopCount.std.toFixed(1)},
                         z = {nullModel.loops.significance.loopCount.zScore.toFixed(2)},
                         p = {nullModel.loops.significance.loopCount.pValue.toFixed(2)}).
-                        We <strong>fail to reject the null hypothesis</strong>—the loop count is not
-                        statistically distinguishable from what would be expected in a random network with the same degree distribution.
+                        The loop count is <strong>consistent with random baseline levels</strong>—not
+                        distinguishable from what would be expected in a randomly rewired network with the same degree distribution.
                       </>
                     )}
                   </p>
                   <p>
-                    {nullModel.cycles.significance.totalCycleCount.isSignificant ? (
-                      <>
-                        <strong>Multi-party cycles (longer chains):</strong> The {nullModel.cycles.real.totalCycleCount} observed
-                        cycles is {((nullModel.cycles.real.totalCycleCount / nullModel.cycles.null.totalCycleCount.mean - 1) * 100).toFixed(0)}% above
-                        null expectation (mean = {nullModel.cycles.null.totalCycleCount.mean.toFixed(1)} ± {nullModel.cycles.null.totalCycleCount.std.toFixed(1)}).
-                        With z = {nullModel.cycles.significance.totalCycleCount.zScore.toFixed(2)} and p {formatPValue(nullModel.cycles.significance.totalCycleCount.pValue)},
-                        the multi-party circular flows are also statistically significant. This indicates that value circulation
-                        through 3–5 company chains reflects intentional business structuring rather than random network topology.
-                      </>
-                    ) : (
-                      <>
-                        <strong>Multi-party cycles:</strong> The {nullModel.cycles.real.totalCycleCount} observed cycles
-                        is not statistically significant (z = {nullModel.cycles.significance.totalCycleCount.zScore.toFixed(2)},
-                        p = {nullModel.cycles.significance.totalCycleCount.pValue.toFixed(2)}). Longer circular chains
-                        are common in dense networks and could plausibly arise by chance.
-                      </>
-                    )}
+                    {(() => {
+                      const cyclePValue = nullModel.cycles.significance.totalCycleCount.pValueExact ?? nullModel.cycles.significance.totalCycleCount.pValue;
+                      const cycleSignificant = cyclePValue < 0.05;
+                      return cycleSignificant ? (
+                        <>
+                          <strong>Multi-party cycles (longer chains):</strong> The {nullModel.cycles.real.totalCycleCount} observed
+                          cycles is {((nullModel.cycles.real.totalCycleCount / nullModel.cycles.null.totalCycleCount.mean - 1) * 100).toFixed(0)}% above
+                          null expectation (mean = {nullModel.cycles.null.totalCycleCount.mean.toFixed(1)} ± {nullModel.cycles.null.totalCycleCount.std.toFixed(1)}).
+                          With exact p = {formatPValue(cyclePValue)},
+                          the multi-party circular flows exceed random baseline levels. This indicates that value circulation
+                          through 3–5 company chains among these firms is stronger than what random network topology would produce.
+                        </>
+                      ) : (
+                        <>
+                          <strong>Multi-party cycles:</strong> The {nullModel.cycles.real.totalCycleCount} observed cycles
+                          is consistent with random baseline levels (exact p = {cyclePValue.toFixed(2)}). Longer circular chains
+                          are common in dense networks and could plausibly arise in randomly rewired networks.
+                        </>
+                      );
+                    })()}
                   </p>
                 </div>
 
                 <div className="research-callout">
                   <p className="research-callout-label">Key Finding</p>
                   <p className="research-callout-text">
-                    {nullModel.loops.significance.loopCount.isSignificant && nullModel.cycles.significance.totalCycleCount.isSignificant ? (
-                      <>
-                        Both two-party loops and multi-party cycles are statistically significant (p &lt; 0.01).
-                        The AI industry exhibits circular deal patterns at rates far exceeding random expectation,
-                        providing quantitative evidence that reciprocal business relationships are a defining
-                        structural feature of this ecosystem—not merely an artifact of network density.
-                      </>
-                    ) : nullModel.loops.significance.loopCount.isSignificant ? (
-                      <>
-                        Direct reciprocity (two-party loops) is statistically significant, while longer cycles
-                        are not. This suggests that the most notable structural feature of AI industry deals is
-                        the prevalence of tight, bidirectional relationships between pairs of companies—investors
-                        who become customers, and vice versa.
-                      </>
-                    ) : (
-                      <>
-                        Neither loops nor cycles reach statistical significance. The observed circular patterns
-                        could plausibly arise in random networks with similar degree distributions.
-                      </>
-                    )}
+                    {(() => {
+                      const loopSignificant = nullModel.loops.significance.loopCount.isSignificant;
+                      const cyclePValue = nullModel.cycles.significance.totalCycleCount.pValueExact ?? nullModel.cycles.significance.totalCycleCount.pValue;
+                      const cycleSignificant = cyclePValue < 0.05;
+                      if (loopSignificant && cycleSignificant) {
+                        return (
+                          <>
+                            Both two-party loops and multi-party cycles exceed random baseline levels (p &lt; 0.05).
+                            These major AI companies exhibit circular deal patterns at rates exceeding random expectation,
+                            indicating that reciprocal business relationships are a notable
+                            structural feature among the firms in our sample—not merely an artifact of network density.
+                          </>
+                        );
+                      } else if (loopSignificant) {
+                        return (
+                          <>
+                            Direct reciprocity (two-party loops) exceeds random baseline levels, while longer cycles
+                            do not. This suggests that the most notable structural feature among these companies is
+                            the prevalence of tight, bidirectional relationships between pairs of companies—investors
+                            who become customers, and vice versa.
+                          </>
+                        );
+                      } else {
+                        return (
+                          <>
+                            Neither loops nor cycles exceed random baseline levels. The observed circular patterns
+                            could plausibly arise in randomly rewired networks with similar degree distributions.
+                          </>
+                        );
+                      }
+                    })()}
                   </p>
                 </div>
               </>
@@ -1038,28 +1072,53 @@ export default async function ResearchPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {multiPartyCycles.slice(0, 10).map((cycle, idx) => (
-                      <tr key={cycle.id}>
-                        <td>
-                          <span style={{ color: 'var(--research-text-faint)', marginRight: '0.5rem' }}>{idx + 1}.</span>
-                          {cycle.path.map(p => p.companyName).join(' → ')} → {cycle.path[0].companyName}
-                        </td>
-                        <td className="text-right research-table-mono" style={{ color: 'var(--research-text-muted)' }}>
-                          {cycle.length}
-                        </td>
-                        <td className="text-right research-table-mono">
-                          {cycle.totalValue > 0 ? formatUSD(cycle.totalValue) : '—'}
-                        </td>
-                        <td className="text-right research-table-mono" style={{ color: 'var(--research-text-muted)' }}>
-                          {cycle.dealCount}
-                        </td>
-                        <td className="text-right">
-                          <span className={`research-table-mono ${getScoreClass(cycle.cycleScore)}`}>
-                            {cycle.cycleScore.toFixed(2)}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
+                    {multiPartyCycles.slice(0, 10).map((cycle, idx) => {
+                      // Build node lookup from cycle path and graphData nodes
+                      const nodeNameMap = new Map(graphData.nodes.map(n => [n.id, n.name]));
+                      return (
+                        <>
+                          <tr key={cycle.id}>
+                            <td>
+                              <span style={{ color: 'var(--research-text-faint)', marginRight: '0.5rem' }}>{idx + 1}.</span>
+                              {cycle.path.map(p => p.companyName).join(' → ')} → {cycle.path[0].companyName}
+                            </td>
+                            <td className="text-right research-table-mono" style={{ color: 'var(--research-text-muted)' }}>
+                              {cycle.length}
+                            </td>
+                            <td className="text-right research-table-mono">
+                              {cycle.totalValue > 0 ? formatUSD(cycle.totalValue) : '—'}
+                            </td>
+                            <td className="text-right research-table-mono" style={{ color: 'var(--research-text-muted)' }}>
+                              {cycle.dealCount}
+                            </td>
+                            <td className="text-right">
+                              <span className={`research-table-mono ${getScoreClass(cycle.cycleScore)}`}>
+                                {cycle.cycleScore.toFixed(2)}
+                              </span>
+                            </td>
+                          </tr>
+                          {/* Debug: Edge breakdown */}
+                          <tr key={`${cycle.id}-debug`} style={{ backgroundColor: 'var(--research-surface-2)' }}>
+                            <td colSpan={5} style={{ padding: '0.5rem 1rem', fontSize: '0.7rem' }}>
+                              <div style={{ color: 'var(--research-text-faint)' }}>
+                                <strong>Edge breakdown:</strong>{' '}
+                                {cycle.edges.map((edge, edgeIdx) => (
+                                  <span key={edgeIdx}>
+                                    {nodeNameMap.get(edge.from) || edge.from} → {nodeNameMap.get(edge.to) || edge.to}:{' '}
+                                    <span style={{ color: edge.totalAmountUSD ? 'var(--research-text)' : 'var(--research-text-faint)' }}>
+                                      {edge.totalAmountUSD ? formatUSD(edge.totalAmountUSD) : 'no $'}
+                                    </span>
+                                    {edgeIdx < cycle.edges.length - 1 ? ' + ' : ''}
+                                  </span>
+                                ))}
+                                {' = '}
+                                <strong style={{ color: 'var(--research-text)' }}>{formatUSD(cycle.totalValue)}</strong>
+                              </div>
+                            </td>
+                          </tr>
+                        </>
+                      );
+                    })}
                   </tbody>
                 </table>
                 {multiPartyCycles.length > 10 && (
@@ -1137,11 +1196,11 @@ export default async function ResearchPage() {
                 information asymmetry.
               </li>
               <li>
-                <strong>Systemic Risk:</strong> The concentration of circular flows
+                <strong>Network Prominence:</strong> The concentration of circular flows
                 around hub nodes is quantified by the Hub Score. Companies with high Hub Scores (particularly
-                NVIDIA and CoreWeave) participate in multiple circular relationships, suggesting that
-                disruptions affecting these entities could propagate through several loops simultaneously.
-                The Hub Score provides a metric for identifying such systemically important entities.
+                NVIDIA and CoreWeave) participate in multiple circular relationships within our sample,
+                suggesting these entities occupy prominent positions in the disclosed deal network that may
+                warrant closer monitoring. The Hub Score provides a metric for identifying such central entities.
               </li>
             </ul>
 
@@ -1208,9 +1267,15 @@ export default async function ResearchPage() {
                 measurement error remains.
               </li>
               <li>
-                <strong>Selection Bias:</strong> Our dataset includes only publicly
-                reported deals. Private arrangements, informal commitments, and undisclosed terms are not
-                captured. This likely understates true circularity.
+                <strong>Non-Random Sample Selection:</strong> Our dataset comprises
+                purposefully selected major AI companies, not a random sample of the industry. Companies
+                were included based on market prominence and deal activity visibility. This means:
+                (a) we can describe patterns among these specific firms but cannot estimate prevalence
+                in the broader AI ecosystem; (b) statistical tests compare observations to random graph
+                baselines rather than testing population hypotheses; (c) smaller companies and private
+                deals are systematically underrepresented. Our findings should be interpreted as
+                &ldquo;major AI companies exhibit circular deal patterns&rdquo; rather than &ldquo;circular
+                patterns are statistically significant in the AI industry.&rdquo;
               </li>
               <li>
                 <strong>Temporal Clustering:</strong> Most deals in our dataset are
@@ -1231,12 +1296,6 @@ export default async function ResearchPage() {
                 network. Temporal dynamics—how loops form, strengthen, or dissolve over time—are not addressed.
               </li>
               <li>
-                <strong>Weight Sensitivity:</strong> The Loop Score and Cycle Score
-                weighting schemes were determined heuristically. Alternative weightings yield different
-                rankings. Sensitivity analysis suggests that rankings are relatively stable for weights within
-                ±0.10 of our chosen values.
-              </li>
-              <li>
                 <strong>Cycle Overlap:</strong> A single deal may participate in
                 multiple cycles, potentially inflating Hub Scores for companies involved in densely connected
                 regions of the graph. We count each structure independently, which may overweight certain
@@ -1244,7 +1303,152 @@ export default async function ResearchPage() {
               </li>
             </ul>
 
-            <h3 className="research-h3">6.3 Future Directions</h3>
+            <h3 className="research-h3">6.3 Weight Sensitivity Analysis</h3>
+            <div className="research-prose">
+              <p>
+                The Loop Score weights (α=0.35, β=0.35, γ=0.30) and Cycle Score weights were determined
+                heuristically. To assess robustness, we re-ran all scoring calculations under five alternative
+                weighting schemes and compared the resulting rankings.
+              </p>
+            </div>
+
+            <div className="research-table-wrapper">
+              <p className="research-table-caption">Table 5: Sensitivity Analysis — Top Loop Rankings Under Alternative Weights</p>
+              <table className="research-table">
+                <thead>
+                  <tr>
+                    <th>Scheme</th>
+                    <th>Description</th>
+                    <th>Top Loop</th>
+                    <th className="text-right">Score</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sensitivityAnalysis.schemes.map((result, idx) => (
+                    <tr key={result.scheme.name} style={idx === sensitivityAnalysis.baselineSchemeIndex ? { backgroundColor: 'var(--research-surface-2)' } : {}}>
+                      <td>
+                        {idx === sensitivityAnalysis.baselineSchemeIndex && (
+                          <span style={{ color: 'var(--research-text-faint)', marginRight: '0.25rem' }}>★</span>
+                        )}
+                        {result.scheme.name}
+                      </td>
+                      <td style={{ color: 'var(--research-text-muted)', fontSize: '0.75rem' }}>
+                        {result.scheme.description}
+                      </td>
+                      <td>
+                        {result.topLoops[0] ? `${result.topLoops[0].company1} ↔ ${result.topLoops[0].company2}` : '—'}
+                      </td>
+                      <td className="text-right research-table-mono">
+                        {result.topLoops[0]?.score.toFixed(3) || '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p className="research-table-note">
+                ★ indicates baseline (paper) weights. All schemes produce rankings from the same underlying data.
+              </p>
+            </div>
+
+            <div className="research-table-wrapper">
+              <p className="research-table-caption">Table 6: Sensitivity Analysis — Top Hub Rankings Under Alternative Weights</p>
+              <table className="research-table">
+                <thead>
+                  <tr>
+                    <th>Scheme</th>
+                    <th>#1 Hub</th>
+                    <th>#2 Hub</th>
+                    <th>#3 Hub</th>
+                    <th className="text-right">Avg Loop Score</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sensitivityAnalysis.schemes.map((result, idx) => (
+                    <tr key={result.scheme.name} style={idx === sensitivityAnalysis.baselineSchemeIndex ? { backgroundColor: 'var(--research-surface-2)' } : {}}>
+                      <td>
+                        {idx === sensitivityAnalysis.baselineSchemeIndex && (
+                          <span style={{ color: 'var(--research-text-faint)', marginRight: '0.25rem' }}>★</span>
+                        )}
+                        {result.scheme.name}
+                      </td>
+                      <td>{result.topHubs[0]?.companyName || '—'}</td>
+                      <td style={{ color: 'var(--research-text-muted)' }}>{result.topHubs[1]?.companyName || '—'}</td>
+                      <td style={{ color: 'var(--research-text-muted)' }}>{result.topHubs[2]?.companyName || '—'}</td>
+                      <td className="text-right research-table-mono" style={{ color: 'var(--research-text-muted)' }}>
+                        {result.avgLoopScore.toFixed(3)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="research-callout">
+              <p className="research-callout-label">Stability Assessment</p>
+              <p className="research-callout-text">
+                {(() => {
+                  const topLoopScores = sensitivityAnalysis.schemes.map(s => s.topLoops[0]?.score ?? 0);
+                  const minScore = Math.min(...topLoopScores);
+                  const maxScore = Math.max(...topLoopScores);
+                  const scoreRange = (maxScore - minScore).toFixed(2);
+                  const tau = sensitivityAnalysis.rankingStability.kendallTau;
+                  const tauStrength = tau >= 0.8 ? 'strong' : tau >= 0.6 ? 'moderate' : 'weak';
+
+                  if (sensitivityAnalysis.rankingStability.topLoopConsistent && sensitivityAnalysis.rankingStability.topHubConsistent) {
+                    return (
+                      <>
+                        <strong>Rankings are stable.</strong> The top-ranked loop and top-ranked hub remain consistent
+                        across all five weighting schemes. While absolute scores vary by up to {scoreRange} across
+                        schemes (Balance-Heavy yields lower scores overall), ordinal rankings remain unchanged.
+                        Kendall&apos;s τ = {tau.toFixed(2)} indicates {tauStrength} rank correlation between the
+                        baseline and alternative schemes. This suggests our findings are robust to reasonable
+                        variations in weight selection.
+                      </>
+                    );
+                  } else if (sensitivityAnalysis.rankingStability.topHubConsistent) {
+                    return (
+                      <>
+                        <strong>Hub rankings are stable; loop rankings vary.</strong> The top hub ({sensitivityAnalysis.schemes[0].topHubs[0]?.companyName})
+                        remains #1 across all schemes, but the top loop varies with weighting choices.
+                        Kendall&apos;s τ = {tau.toFixed(2)}. Hub-level conclusions are robust;
+                        specific loop rankings should be interpreted with caution.
+                      </>
+                    );
+                  } else {
+                    return (
+                      <>
+                        <strong>Rankings are sensitive to weight selection.</strong> Different weighting schemes produce
+                        different top-ranked entities. Kendall&apos;s τ = {tau.toFixed(2)} indicates
+                        {tau >= 0.6 ? ' moderate' : ' limited'} rank stability.
+                        Readers should consider the full ranking tables rather than focusing on specific positions.
+                      </>
+                    );
+                  }
+                })()}
+              </p>
+            </div>
+
+            <h3 className="research-h3">6.4 Scope of Claims</h3>
+            <div className="research-prose">
+              <p><strong>This paper establishes:</strong></p>
+            </div>
+            <ul className="research-list">
+              <li>A replicable methodology for detecting and scoring circular patterns in corporate deal networks</li>
+              <li>That major AI companies in our sample have documented reciprocal deal relationships</li>
+              <li>That infrastructure providers (particularly NVIDIA) participate in diverse deal types across our sample</li>
+              <li>Potential starting points for deeper regulatory and analyst review of specific relationships</li>
+            </ul>
+            <div className="research-prose">
+              <p><strong>This paper does not establish:</strong></p>
+            </div>
+            <ul className="research-list">
+              <li>Whether these patterns are abnormal relative to other industries (requires baseline comparison)</li>
+              <li>Whether circular deals cause valuation interdependence (requires causal analysis)</li>
+              <li>Population-level prevalence of circularity in the AI industry (requires random sampling)</li>
+              <li>Systemic risk levels or contagion probabilities (requires econometric stress-testing)</li>
+            </ul>
+
+            <h3 className="research-h3">6.5 Future Directions</h3>
             <div className="research-prose">
               <p>
                 Future work could extend this analysis by: (1) incorporating temporal dynamics to study how

@@ -309,6 +309,16 @@ function normalCDF(x: number): number {
   return 0.5 * (1.0 + sign * y);
 }
 
+/**
+ * Compute exact permutation p-value by counting null iterations >= observed.
+ * Use for skewed distributions where normal approximation is unreliable.
+ */
+function computeExactPValue(observed: number, nullValues: number[]): number {
+  if (nullValues.length === 0) return 1;
+  const countGreaterOrEqual = nullValues.filter(v => v >= observed).length;
+  return countGreaterOrEqual / nullValues.length;
+}
+
 // ============================================================================
 // MAIN COMPUTATION
 // ============================================================================
@@ -408,6 +418,8 @@ export async function computeNullModel(
   // Compute significance
   const loopCountSig = computeSignificance(realLoopCount, loopCountDist);
   const cycleCountSig = computeSignificance(realTotalCycleCount, totalCycleCountDist);
+  // Exact p-value for cycles (distribution is right-skewed, normal approx unreliable)
+  const cycleExactPValue = computeExactPValue(realTotalCycleCount, nullTotalCycleCounts);
 
   // Hub significance for each company
   const hubResults = realHubScores
@@ -462,7 +474,7 @@ export async function computeNullModel(
         cycle4Count: cycle4CountDist,
         cycle5Count: cycle5CountDist,
       },
-      significance: { totalCycleCount: cycleCountSig },
+      significance: { totalCycleCount: { ...cycleCountSig, pValueExact: cycleExactPValue } },
     },
     hubs: hubResults,
   });

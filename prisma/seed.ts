@@ -3138,7 +3138,19 @@ async function computeAndStoreNullModel(): Promise<void> {
 }
 
 async function main() {
-  console.log('🌱 Seeding database (additive mode)...\n');
+  console.log('🌱 Seeding database...\n');
+
+  // Clean up existing data to prevent duplicates
+  console.log('🧹 Cleaning up existing data...');
+  await prisma.nullModelHubStats.deleteMany({});
+  await prisma.nullModelCycleStats.deleteMany({});
+  await prisma.nullModelLoopStats.deleteMany({});
+  await prisma.nullModelRun.deleteMany({});
+  await prisma.source.deleteMany({});
+  await prisma.dealParty.deleteMany({});
+  await prisma.deal.deleteMany({});
+  await prisma.company.deleteMany({});
+  console.log('✓ Database cleaned\n');
 
   // Seed companies first, get slug->id mapping
   const companySlugToId = await seedCompanies();

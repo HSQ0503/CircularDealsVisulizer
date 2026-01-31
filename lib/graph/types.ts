@@ -205,6 +205,54 @@ export interface GraphFilters {
 }
 
 // ============================================================================
+// SENSITIVITY ANALYSIS (Weight Robustness)
+// ============================================================================
+
+// Loop Score weighting scheme
+export type LoopScoreWeights = {
+  diversity: number;   // Weight for flow type diversity (α)
+  balance: number;     // Weight for monetary balance (β)
+  confidence: number;  // Weight for data confidence (γ)
+};
+
+// Cycle Score weighting scheme
+export type CycleScoreWeights = {
+  flowCoherence: number;   // F
+  valueBalance: number;    // B
+  valueMagnitude: number;  // M
+  confidence: number;      // C
+  lengthPenalty: number;   // L
+};
+
+// Named weighting scheme for display
+export type WeightingScheme = {
+  name: string;
+  description: string;
+  loopWeights: LoopScoreWeights;
+  cycleWeights: CycleScoreWeights;
+};
+
+// Result for a single scheme
+export type SchemeResult = {
+  scheme: WeightingScheme;
+  topLoops: Array<{ id: string; company1: string; company2: string; score: number }>;
+  topHubs: Array<{ companyName: string; hubScore: number; normalizedScore: number }>;
+  avgLoopScore: number;
+  avgCycleScore: number;
+};
+
+// Full sensitivity analysis result
+export type SensitivityAnalysis = {
+  schemes: SchemeResult[];
+  rankingStability: {
+    topLoopConsistent: boolean;   // Same top loop across all schemes
+    topHubConsistent: boolean;    // Same top hub across all schemes
+    kendallTau: number;           // Rank correlation coefficient (0-1)
+  };
+  baselineSchemeIndex: number;    // Index of the "original" scheme
+};
+
+// ============================================================================
 // NULL MODEL (Statistical Significance Testing)
 // ============================================================================
 
@@ -230,6 +278,7 @@ export type DistributionStats = {
 export type SignificanceMetrics = {
   zScore: number;
   pValue: number;
+  pValueExact?: number; // Exact permutation p-value (for skewed distributions)
   percentile: number;
   isSignificant: boolean;
 };

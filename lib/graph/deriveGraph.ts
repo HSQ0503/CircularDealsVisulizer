@@ -5,7 +5,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { DealType, FlowType, FlowDirection, PartyRole, Prisma } from '@prisma/client';
-import type { GraphResponse, NodeDTO, EdgeDTO, DealDTO, GraphFilters, SuperEdgeDTO, FlowBreakdown, LoopDTO, HubScoreDTO, MultiPartyCycleDTO, CycleNodeDTO } from './types';
+import type { GraphResponse, NodeDTO, EdgeDTO, DealDTO, GraphFilters, LoopDTO, HubScoreDTO, MultiPartyCycleDTO, CycleNodeDTO, LoopScoreWeights, CycleScoreWeights, WeightingScheme, SchemeResult, SensitivityAnalysis } from './types';
 
 // ============================================================================
 // MAIN FUNCTION
@@ -23,7 +23,6 @@ export async function deriveGraph(
       });
 
   const companyIds = companies.map(c => c.id);
-  const companyMap = new Map(companies.map(c => [c.id, c]));
 
   // Build deal query with filters
   const dealWhere: Prisma.DealWhereInput = {
@@ -497,7 +496,8 @@ function detectMultiPartyCycles(
   ): void {
     // Found a cycle back to start (minimum length 3)
     if (path.length >= 3 && current === target) {
-      const cycle = createCycle(target, path, edgePath, nodeMap);
+      // IMPORTANT: Copy arrays since they get modified by backtracking after this call returns
+      const cycle = createCycle(target, [...path], [...edgePath], nodeMap);
       if (cycle && !foundCycles.has(cycle.id)) {
         foundCycles.set(cycle.id, cycle);
       }
@@ -687,4 +687,378 @@ function calculateValueMagnitude(totalValue: number): number {
   const logValue = Math.log10(totalValue);
   // $1M (6) = 0, $1T (12) = 1.0
   return Math.min(1, Math.max(0, (logValue - 6) / 6));
+}
+
+// ============================================================================
+// SENSITIVITY ANALYSIS
+// ============================================================================
+
+// Predefined weighting schemes
+const WEIGHTING_SCHEMES: WeightingScheme[] = [
+  {
+    name: 'Original',
+    description: 'Current paper weights (α=0.35, β=0.35, γ=0.30)',
+    loopWeights: { diversity: 0.35, balance: 0.35, confidence: 0.30 },
+    cycleWeights: { flowCoherence: 0.30, valueBalance: 0.25, valueMagnitude: 0.10, confidence: 0.20, lengthPenalty: 0.15 },
+  },
+  {
+    name: 'Equal',
+    description: 'Equal weights across all components',
+    loopWeights: { diversity: 0.333, balance: 0.333, confidence: 0.334 },
+    cycleWeights: { flowCoherence: 0.20, valueBalance: 0.20, valueMagnitude: 0.20, confidence: 0.20, lengthPenalty: 0.20 },
+  },
+  {
+    name: 'Diversity-Heavy',
+    description: 'Emphasizes flow type diversity (α=0.50)',
+    loopWeights: { diversity: 0.50, balance: 0.25, confidence: 0.25 },
+    cycleWeights: { flowCoherence: 0.40, valueBalance: 0.20, valueMagnitude: 0.10, confidence: 0.15, lengthPenalty: 0.15 },
+  },
+  {
+    name: 'Confidence-Heavy',
+    description: 'Emphasizes data quality (γ=0.50)',
+    loopWeights: { diversity: 0.25, balance: 0.25, confidence: 0.50 },
+    cycleWeights: { flowCoherence: 0.20, valueBalance: 0.15, valueMagnitude: 0.10, confidence: 0.40, lengthPenalty: 0.15 },
+  },
+  {
+    name: 'Balance-Heavy',
+    description: 'Emphasizes symmetric flows (β=0.50)',
+    loopWeights: { diversity: 0.25, balance: 0.50, confidence: 0.25 },
+    cycleWeights: { flowCoherence: 0.20, valueBalance: 0.40, valueMagnitude: 0.10, confidence: 0.15, lengthPenalty: 0.15 },
+  },
+];
+
+// Calculate loop score with custom weights
+function calculateLoopScoreWithWeights(
+  edge1: EdgeDTO,
+  edge2: EdgeDTO,
+  weights: LoopScoreWeights
+): number {
+  const flowDiversity = edge1.flowType !== edge2.flowType ? 1.0 : 0.7;
+  const balance = calculateBalance(edge1, edge2);
+  const avgConfidence = ((edge1.avgConfidence ?? 3) + (edge2.avgConfidence ?? 3)) / 10;
+
+  return (
+    weights.diversity * flowDiversity +
+    weights.balance * balance +
+    weights.confidence * avgConfidence
+  );
+}
+
+// Calculate cycle score with custom weights
+function calculateCycleScoreWithWeights(
+  flowCoherence: number,
+  valueBalance: number,
+  valueMagnitude: number,
+  avgConfidence: number,
+  lengthPenalty: number,
+  weights: CycleScoreWeights
+): number {
+  return (
+    weights.flowCoherence * flowCoherence +
+    weights.valueBalance * valueBalance +
+    weights.valueMagnitude * valueMagnitude +
+    weights.confidence * (avgConfidence / 5) +
+    weights.lengthPenalty * lengthPenalty
+  );
+}
+
+// Recalculate all scores with a given weighting scheme
+function recalculateWithScheme(
+  edges: EdgeDTO[],
+  nodes: NodeDTO[],
+  scheme: WeightingScheme
+): { loops: LoopDTO[]; cycles: MultiPartyCycleDTO[]; hubs: HubScoreDTO[] } {
+  // Recalculate loops with custom weights
+  const edgeMap = new Map<string, EdgeDTO>();
+  for (const edge of edges) {
+    const key = `${edge.from}→${edge.to}`;
+    const existing = edgeMap.get(key);
+    if (!existing || (edge.totalAmountUSD ?? 0) > (existing.totalAmountUSD ?? 0)) {
+      edgeMap.set(key, edge);
+    }
+  }
+
+  const loops: LoopDTO[] = [];
+  const seen = new Set<string>();
+  const nodeMap = new Map(nodes.map(n => [n.id, n]));
+
+  for (const edge of edges) {
+    const reverseKey = `${edge.to}→${edge.from}`;
+    const reverseEdge = edgeMap.get(reverseKey);
+
+    if (reverseEdge) {
+      const pairId = [edge.from, edge.to].sort().join('--');
+      if (seen.has(pairId)) continue;
+      seen.add(pairId);
+
+      const node1 = nodeMap.get(edge.from);
+      const node2 = nodeMap.get(edge.to);
+      if (!node1 || !node2) continue;
+
+      const balanceRatio = calculateBalance(edge, reverseEdge);
+      const loopScore = calculateLoopScoreWithWeights(edge, reverseEdge, scheme.loopWeights);
+
+      loops.push({
+        id: pairId,
+        company1: { id: node1.id, name: node1.name, slug: node1.slug },
+        company2: { id: node2.id, name: node2.name, slug: node2.slug },
+        edge1: edge,
+        edge2: reverseEdge,
+        totalCirculation: (edge.totalAmountUSD ?? 0) + (reverseEdge.totalAmountUSD ?? 0),
+        balanceRatio,
+        flowDiversity: edge.flowType !== reverseEdge.flowType,
+        loopScore,
+      });
+    }
+  }
+
+  loops.sort((a, b) => b.loopScore - a.loopScore);
+
+  // Recalculate cycles with custom weights
+  const cycles = recalculateCyclesWithScheme(edges, nodes, scheme.cycleWeights);
+
+  // Recalculate hub scores
+  const hubs = calculateHubScores(loops, cycles, nodes);
+
+  return { loops, cycles, hubs };
+}
+
+// Recalculate cycles with custom weights
+function recalculateCyclesWithScheme(
+  edges: EdgeDTO[],
+  nodes: NodeDTO[],
+  weights: CycleScoreWeights,
+  maxLength: number = 5
+): MultiPartyCycleDTO[] {
+  const adjacency = new Map<string, EdgeDTO[]>();
+  for (const edge of edges) {
+    if (!adjacency.has(edge.from)) adjacency.set(edge.from, []);
+    adjacency.get(edge.from)!.push(edge);
+  }
+
+  const nodeMap = new Map(nodes.map(n => [n.id, n]));
+  const foundCycles = new Map<string, MultiPartyCycleDTO>();
+
+  for (const startNode of nodes) {
+    const path: string[] = [];
+    const edgePath: EdgeDTO[] = [];
+    dfs(startNode.id, startNode.id, path, edgePath);
+  }
+
+  function dfs(current: string, target: string, path: string[], edgePath: EdgeDTO[]): void {
+    if (path.length >= 3 && current === target) {
+      const cycle = createCycleWithWeights(target, [...path], [...edgePath], nodeMap, weights);
+      if (cycle && !foundCycles.has(cycle.id)) {
+        foundCycles.set(cycle.id, cycle);
+      }
+      return;
+    }
+
+    if (path.length >= maxLength) return;
+
+    const outEdges = adjacency.get(current) || [];
+    for (const edge of outEdges) {
+      const next = edge.to;
+      if (next !== target && path.includes(next)) continue;
+
+      path.push(next);
+      edgePath.push(edge);
+      dfs(next, target, path, edgePath);
+      path.pop();
+      edgePath.pop();
+    }
+  }
+
+  return Array.from(foundCycles.values()).sort((a, b) => b.cycleScore - a.cycleScore);
+}
+
+function createCycleWithWeights(
+  startNodeId: string,
+  path: string[],
+  edgePath: EdgeDTO[],
+  nodeMap: Map<string, NodeDTO>,
+  weights: CycleScoreWeights
+): MultiPartyCycleDTO | null {
+  const truePath = [startNodeId, ...path.slice(0, -1)];
+  if (truePath.length < 3 || edgePath.length < 3) return null;
+
+  const slugs = truePath.map(id => nodeMap.get(id)?.slug || id);
+  const canonicalId = canonicalizeCycleId(slugs);
+
+  const cyclePath: CycleNodeDTO[] = truePath.map(id => {
+    const node = nodeMap.get(id);
+    return {
+      companyId: id,
+      companyName: node?.name || 'Unknown',
+      companySlug: node?.slug || id,
+    };
+  });
+
+  const amounts = edgePath
+    .map(e => e.totalAmountUSD)
+    .filter((a): a is number => a !== null && a > 0);
+
+  const totalValue = amounts.reduce((sum, a) => sum + a, 0);
+  const minEdgeValue = amounts.length > 0 ? Math.min(...amounts) : null;
+  const hasIncompleteData = edgePath.some(e => e.totalAmountUSD === null);
+  const avgConfidence = edgePath.reduce((sum, e) => sum + (e.avgConfidence || 3), 0) / edgePath.length;
+
+  const flowCoherence = calculateFlowCoherence(edgePath);
+  const valueBalance = calculateCycleValueBalance(amounts);
+  const valueMagnitude = calculateValueMagnitude(totalValue);
+  const lengthPenalty = 1 / Math.sqrt(truePath.length - 1);
+
+  const cycleScore = calculateCycleScoreWithWeights(
+    flowCoherence,
+    valueBalance,
+    valueMagnitude,
+    avgConfidence,
+    lengthPenalty,
+    weights
+  );
+
+  const flowCounts = new Map<FlowType, number>();
+  for (const edge of edgePath) {
+    flowCounts.set(edge.flowType, (flowCounts.get(edge.flowType) || 0) + 1);
+  }
+  let dominantFlowType: FlowType = FlowType.MONEY;
+  let maxCount = 0;
+  for (const [flowType, count] of flowCounts) {
+    if (count > maxCount) {
+      maxCount = count;
+      dominantFlowType = flowType;
+    }
+  }
+
+  const dealCount = edgePath.reduce((sum, e) => sum + e.dealIds.length, 0);
+
+  return {
+    id: canonicalId,
+    length: truePath.length,
+    path: cyclePath,
+    edges: edgePath,
+    totalValue,
+    minEdgeValue,
+    avgConfidence,
+    flowCoherence,
+    valueBalance,
+    lengthPenalty,
+    cycleScore,
+    dominantFlowType,
+    dealCount,
+    hasIncompleteData,
+  };
+}
+
+// Calculate Kendall's tau rank correlation between two rankings
+function kendallTau(ranking1: string[], ranking2: string[]): number {
+  const n = Math.min(ranking1.length, ranking2.length);
+  if (n < 2) return 1;
+
+  // Create position map for second ranking
+  const pos2 = new Map(ranking2.slice(0, n).map((id, i) => [id, i]));
+
+  let concordant = 0;
+  let discordant = 0;
+
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      const id_i = ranking1[i];
+      const id_j = ranking1[j];
+
+      const pos2_i = pos2.get(id_i);
+      const pos2_j = pos2.get(id_j);
+
+      if (pos2_i !== undefined && pos2_j !== undefined) {
+        if (pos2_i < pos2_j) {
+          concordant++;
+        } else if (pos2_i > pos2_j) {
+          discordant++;
+        }
+      }
+    }
+  }
+
+  const total = concordant + discordant;
+  if (total === 0) return 1;
+
+  return (concordant - discordant) / total;
+}
+
+// Main sensitivity analysis function
+export async function runSensitivityAnalysis(): Promise<SensitivityAnalysis> {
+  // Get the full graph data
+  const graphData = await deriveGraph('all');
+  const { edges, nodes } = graphData;
+
+  const schemeResults: SchemeResult[] = [];
+
+  for (const scheme of WEIGHTING_SCHEMES) {
+    const { loops, cycles, hubs } = recalculateWithScheme(edges, nodes, scheme);
+
+    const topLoops = loops.slice(0, 5).map(l => ({
+      id: l.id,
+      company1: l.company1.name,
+      company2: l.company2.name,
+      score: l.loopScore,
+    }));
+
+    const topHubs = hubs.slice(0, 5).map(h => ({
+      companyName: h.companyName,
+      hubScore: h.hubScore,
+      normalizedScore: h.normalizedHubScore,
+    }));
+
+    const avgLoopScore = loops.length > 0
+      ? loops.reduce((sum, l) => sum + l.loopScore, 0) / loops.length
+      : 0;
+
+    const avgCycleScore = cycles.length > 0
+      ? cycles.reduce((sum, c) => sum + c.cycleScore, 0) / cycles.length
+      : 0;
+
+    schemeResults.push({
+      scheme,
+      topLoops,
+      topHubs,
+      avgLoopScore,
+      avgCycleScore,
+    });
+  }
+
+  // Check ranking stability
+  const baselineIndex = 0; // "Original" scheme
+  const baselineTopLoop = schemeResults[baselineIndex].topLoops[0]?.id;
+  const baselineTopHub = schemeResults[baselineIndex].topHubs[0]?.companyName;
+
+  const topLoopConsistent = schemeResults.every(
+    r => r.topLoops[0]?.id === baselineTopLoop
+  );
+
+  const topHubConsistent = schemeResults.every(
+    r => r.topHubs[0]?.companyName === baselineTopHub
+  );
+
+  // Calculate average Kendall's tau for hub rankings
+  const baselineHubRanking = schemeResults[baselineIndex].topHubs.map(h => h.companyName);
+  const tauValues: number[] = [];
+
+  for (let i = 1; i < schemeResults.length; i++) {
+    const otherRanking = schemeResults[i].topHubs.map(h => h.companyName);
+    tauValues.push(kendallTau(baselineHubRanking, otherRanking));
+  }
+
+  const avgTau = tauValues.length > 0
+    ? tauValues.reduce((a, b) => a + b, 0) / tauValues.length
+    : 1;
+
+  return {
+    schemes: schemeResults,
+    rankingStability: {
+      topLoopConsistent,
+      topHubConsistent,
+      kendallTau: avgTau,
+    },
+    baselineSchemeIndex: baselineIndex,
+  };
 }
