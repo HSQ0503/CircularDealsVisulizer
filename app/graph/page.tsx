@@ -430,10 +430,10 @@ function GraphPageContent() {
         </div>
 
         {/* Sidebar */}
-        <aside 
+        <aside
           className={`
             absolute right-0 top-0 bottom-0 w-96 bg-surface border-l border-border-subtle
-            transition-transform duration-300 overflow-hidden
+            transition-transform duration-300 overflow-hidden z-10
             ${sidebarOpen ? 'translate-x-0' : 'translate-x-full'}
           `}
         >

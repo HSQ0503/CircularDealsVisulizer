@@ -376,3 +376,707 @@ h4 { font-size: 1rem; }
   height: 12px;
   border-radius: 50%;
 }
+
+/* ============================================================================
+   RESEARCH PAGE - Academic Journal Theme
+   Light mode default with dark mode toggle
+   ============================================================================ */
+
+/* Research page CSS variables - Light mode (default) */
+:root {
+  --research-bg: #FFFDF8;
+  --research-bg-alt: #F8F6F1;
+  --research-surface: #F5F3EE;
+  --research-surface-hover: #EDEAE3;
+  --research-text: #1a1a1a;
+  --research-text-secondary: #4a4a4a;
+  --research-text-muted: #6b6b6b;
+  --research-text-faint: #8a8a8a;
+  --research-border: #e0ddd6;
+  --research-border-subtle: #eae7e0;
+  --research-accent: #1e40af;
+  --research-accent-muted: #3b5998;
+  --research-link: #1e40af;
+  --research-link-hover: #1e3a8a;
+  --research-success: #166534;
+  --research-warning: #a16207;
+  --research-callout-bg: #F8F6F1;
+  --research-callout-border: #1e40af;
+  --research-table-header-bg: #F5F3EE;
+  --research-table-row-alt: #FAFAF7;
+  --research-code-bg: #F5F3EE;
+}
+
+/* Research page CSS variables - Dark mode */
+[data-theme="dark"] {
+  --research-bg: #1a1a1e;
+  --research-bg-alt: #1f1f24;
+  --research-surface: #252529;
+  --research-surface-hover: #2a2a2f;
+  --research-text: #e8e6e3;
+  --research-text-secondary: #c8c6c3;
+  --research-text-muted: #a8a6a3;
+  --research-text-faint: #787673;
+  --research-border: #3a3a3e;
+  --research-border-subtle: #2f2f33;
+  --research-accent: #93c5fd;
+  --research-accent-muted: #60a5fa;
+  --research-link: #93c5fd;
+  --research-link-hover: #bfdbfe;
+  --research-success: #4ade80;
+  --research-warning: #fbbf24;
+  --research-callout-bg: #252529;
+  --research-callout-border: #60a5fa;
+  --research-table-header-bg: #252529;
+  --research-table-row-alt: #1f1f24;
+  --research-code-bg: #252529;
+}
+
+/* Research page base styles */
+.research-page {
+  background: var(--research-bg);
+  color: var(--research-text);
+  min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Academic serif font stack for prose */
+.research-prose {
+  font-family: Charter, "Bitstream Charter", "Sitka Text", Cambria, serif;
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  color: var(--research-text-secondary);
+}
+
+.research-prose p {
+  margin-bottom: 1.25em;
+  text-align: justify;
+  hyphens: auto;
+}
+
+.research-prose p:last-child {
+  margin-bottom: 0;
+}
+
+/* Research page headings - sans-serif for contrast */
+.research-h1 {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 1.875rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--research-text);
+  letter-spacing: -0.02em;
+}
+
+.research-h1-subtitle {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 1.375rem;
+  font-weight: 400;
+  line-height: 1.3;
+  color: var(--research-text-muted);
+  letter-spacing: -0.01em;
+}
+
+.research-h2 {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--research-text);
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--research-border-subtle);
+}
+
+.research-h3 {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--research-text);
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Section labels (Abstract, Keywords, etc.) */
+.research-label {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--research-text-muted);
+}
+
+/* Research header */
+.research-header {
+  background: var(--research-bg);
+  border-bottom: 1px solid var(--research-border);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.research-header-inner {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.research-back-link {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.875rem;
+  color: var(--research-text-muted);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.research-back-link:hover {
+  color: var(--research-text);
+}
+
+/* Theme toggle button */
+.research-theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--research-border);
+  background: var(--research-surface);
+  color: var(--research-text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.research-theme-toggle:hover {
+  background: var(--research-surface-hover);
+  color: var(--research-text);
+  border-color: var(--research-border);
+}
+
+/* Research nav links */
+.research-nav-link {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--research-text-muted);
+  text-decoration: none;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.25rem;
+  border: 1px solid var(--research-border);
+  transition: all 0.15s ease;
+}
+
+.research-nav-link:hover {
+  color: var(--research-text);
+  background: var(--research-surface);
+}
+
+/* Title block */
+.research-title-block {
+  text-align: center;
+  padding-bottom: 2.5rem;
+  margin-bottom: 2.5rem;
+  border-bottom: 1px solid var(--research-border);
+}
+
+.research-paper-label {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--research-text-faint);
+  margin-bottom: 1.25rem;
+}
+
+.research-authors {
+  margin-top: 1.75rem;
+  color: var(--research-text-muted);
+}
+
+.research-authors-name {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.9375rem;
+}
+
+.research-authors-affiliation {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.8125rem;
+  color: var(--research-text-faint);
+  margin-top: 0.25rem;
+}
+
+/* Abstract box */
+.research-abstract {
+  background: var(--research-surface);
+  border: 1px solid var(--research-border-subtle);
+  border-radius: 0.25rem;
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 2.5rem;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.research-abstract-text {
+  font-family: Charter, "Bitstream Charter", "Sitka Text", Cambria, serif;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--research-text-secondary);
+  text-align: justify;
+  hyphens: auto;
+}
+
+.research-keywords {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--research-border-subtle);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.8125rem;
+  color: var(--research-text-faint);
+}
+
+.research-keywords strong {
+  color: var(--research-text-muted);
+  font-weight: 600;
+}
+
+/* Callout/highlight boxes */
+.research-callout {
+  background: var(--research-callout-bg);
+  border-left: 3px solid var(--research-callout-border);
+  padding: 1.25rem 1.5rem;
+  margin: 1.75rem 0;
+  border-radius: 0 0.25rem 0.25rem 0;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.research-callout-label {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--research-accent);
+  margin-bottom: 0.5rem;
+}
+
+.research-callout-text {
+  font-family: Charter, "Bitstream Charter", "Sitka Text", Cambria, serif;
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--research-text);
+}
+
+/* Definition boxes */
+.research-definition {
+  background: var(--research-surface);
+  border: 1px solid var(--research-border-subtle);
+  border-radius: 0.25rem;
+  padding: 1.25rem 1.5rem;
+  margin: 1.75rem 0;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.research-definition-title {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--research-text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.research-formula {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  font-size: 0.9375rem;
+  color: var(--research-text);
+  text-align: center;
+  padding: 0.75rem 0;
+  margin-bottom: 0.75rem;
+}
+
+.research-definition-note {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.875rem;
+  color: var(--research-text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.research-definition-item {
+  margin-bottom: 0.875rem;
+}
+
+.research-definition-item:last-child {
+  margin-bottom: 0;
+}
+
+.research-definition-item-title {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--research-text);
+  margin-bottom: 0.25rem;
+}
+
+.research-definition-item-text {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.875rem;
+  color: var(--research-text-muted);
+}
+
+.research-definition-item-note {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.75rem;
+  color: var(--research-text-faint);
+  margin-top: 0.25rem;
+}
+
+/* Tables */
+.research-table-wrapper {
+  background: var(--research-surface);
+  border: 1px solid var(--research-border-subtle);
+  border-radius: 0.25rem;
+  padding: 1rem 1.25rem;
+  margin: 1.75rem 0;
+  overflow-x: auto;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.research-table-caption {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--research-text-muted);
+  margin-bottom: 0.875rem;
+}
+
+.research-table {
+  width: 100%;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.875rem;
+  border-collapse: collapse;
+}
+
+.research-table th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--research-text);
+  padding: 0.625rem 0.75rem;
+  border-bottom: 2px solid var(--research-border);
+  white-space: nowrap;
+}
+
+.research-table th.text-right {
+  text-align: right;
+}
+
+.research-table td {
+  padding: 0.5rem 0.75rem;
+  color: var(--research-text-secondary);
+  border-bottom: 1px solid var(--research-border-subtle);
+}
+
+.research-table td.text-right {
+  text-align: right;
+}
+
+.research-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.research-table-mono {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  font-size: 0.8125rem;
+}
+
+.research-table-note {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.75rem;
+  color: var(--research-text-faint);
+  margin-top: 0.75rem;
+}
+
+/* Score indicators */
+.research-score-high {
+  color: var(--research-success);
+  font-weight: 600;
+}
+
+.research-score-medium {
+  color: var(--research-warning);
+  font-weight: 600;
+}
+
+.research-score-low {
+  color: var(--research-text-muted);
+  font-weight: 600;
+}
+
+/* Lists */
+.research-list {
+  font-family: Charter, "Bitstream Charter", "Sitka Text", Cambria, serif;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--research-text-secondary);
+  margin: 1rem 0;
+  padding-left: 1.5rem;
+}
+
+.research-list li {
+  margin-bottom: 0.5rem;
+}
+
+.research-list li:last-child {
+  margin-bottom: 0;
+}
+
+.research-list strong {
+  color: var(--research-text);
+  font-weight: 600;
+}
+
+/* Code/algorithm blocks */
+.research-code {
+  background: var(--research-code-bg);
+  border: 1px solid var(--research-border-subtle);
+  border-radius: 0.25rem;
+  padding: 1rem 1.25rem;
+  margin: 1.25rem 0;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--research-text-muted);
+  overflow-x: auto;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.research-code-comment {
+  color: var(--research-text-faint);
+}
+
+.research-code-number {
+  color: var(--research-accent);
+}
+
+/* Inline code */
+.research-prose code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  font-size: 0.875em;
+  background: var(--research-surface);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  color: var(--research-text);
+}
+
+/* Emphasis */
+.research-prose em {
+  font-style: italic;
+}
+
+.research-prose strong {
+  color: var(--research-text);
+  font-weight: 600;
+}
+
+/* Links */
+.research-link {
+  color: var(--research-link);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.15s ease;
+}
+
+.research-link:hover {
+  color: var(--research-link-hover);
+}
+
+/* Sections */
+.research-section {
+  margin-bottom: 2.5rem;
+}
+
+/* Interactive explorer section */
+.research-explorer {
+  margin: 2.5rem 0;
+}
+
+.research-explorer-title {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--research-text);
+  margin-bottom: 0.75rem;
+}
+
+.research-explorer-text {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.9375rem;
+  color: var(--research-text-muted);
+  margin-bottom: 1rem;
+}
+
+.research-explorer-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+/* Research-specific buttons */
+.research-btn {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.research-btn-primary {
+  background: var(--research-accent);
+  color: white;
+  border: none;
+}
+
+.research-btn-primary:hover {
+  background: var(--research-link-hover);
+}
+
+[data-theme="dark"] .research-btn-primary {
+  background: var(--research-accent);
+  color: #1a1a1e;
+}
+
+[data-theme="dark"] .research-btn-primary:hover {
+  background: var(--research-link-hover);
+}
+
+.research-btn-secondary {
+  background: transparent;
+  color: var(--research-text-muted);
+  border: 1px solid var(--research-border);
+}
+
+.research-btn-secondary:hover {
+  background: var(--research-surface);
+  color: var(--research-text);
+}
+
+/* References section */
+.research-references {
+  border-top: 1px solid var(--research-border);
+  padding-top: 2rem;
+  margin-top: 2.5rem;
+}
+
+.research-reference {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--research-text-muted);
+  margin-bottom: 0.875rem;
+  padding-left: 1.5rem;
+  text-indent: -1.5rem;
+}
+
+.research-reference em {
+  font-style: italic;
+}
+
+/* Citation box */
+.research-citation {
+  border-top: 1px solid var(--research-border);
+  padding-top: 2rem;
+  margin-top: 2.5rem;
+}
+
+.research-citation-label {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--research-text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.research-citation-box {
+  background: var(--research-surface);
+  border: 1px solid var(--research-border-subtle);
+  border-radius: 0.25rem;
+  padding: 1rem 1.25rem;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--research-text-muted);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.research-citation-box em {
+  font-style: italic;
+}
+
+.research-bibtex-label {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.75rem;
+  color: var(--research-text-faint);
+  margin-top: 1rem;
+}
+
+.research-bibtex {
+  background: var(--research-surface);
+  border: 1px solid var(--research-border-subtle);
+  border-radius: 0.25rem;
+  padding: 0.875rem 1rem;
+  margin-top: 0.5rem;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--research-text-muted);
+  overflow-x: auto;
+  white-space: pre;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Footer */
+.research-footer {
+  border-top: 1px solid var(--research-border);
+  padding: 2rem 1.5rem;
+  margin-top: 3rem;
+  background: var(--research-bg);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.research-footer-text {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.75rem;
+  color: var(--research-text-faint);
+  text-align: center;
+  max-width: 42rem;
+  margin: 0 auto;
+}
+
+.research-footer-text + .research-footer-text {
+  margin-top: 0.5rem;
+}
+
+/* Screen reader only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
