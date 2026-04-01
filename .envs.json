@@ -1,0 +1,10 @@
+{
+  "projectId": "prj_5f33b8b7",
+  "projectName": "aibubvis",
+  "environments": {
+    "development": ".env"
+  },
+  "ignore": [
+    ".env.local"
+  ]
+}

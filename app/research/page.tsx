@@ -274,19 +274,19 @@ export default async function ResearchPage() {
                 <tbody>
                   <tr>
                     <td>Cloud Commitment</td>
-                    <td className="text-right research-table-mono">23</td>
+                    <td className="text-right research-table-mono">25</td>
                   </tr>
                   <tr>
                     <td>Investment</td>
-                    <td className="text-right research-table-mono">19</td>
+                    <td className="text-right research-table-mono">23</td>
                   </tr>
                   <tr>
                     <td>Partnership</td>
-                    <td className="text-right research-table-mono">13</td>
+                    <td className="text-right research-table-mono">24</td>
                   </tr>
                   <tr>
                     <td>Supply Agreement</td>
-                    <td className="text-right research-table-mono">7</td>
+                    <td className="text-right research-table-mono">16</td>
                   </tr>
                   <tr>
                     <td>Acquisition</td>
