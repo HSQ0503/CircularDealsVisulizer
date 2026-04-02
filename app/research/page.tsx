@@ -68,7 +68,7 @@ export default async function ResearchPage() {
         <article>
           {/* Title Block */}
           <header className="research-title-block">
-            <p className="research-paper-label">Working Paper — January 2025</p>
+            <p className="research-paper-label">Working Paper — January 2026</p>
             <h1 className="research-h1">
               Quantifying Circularity in AI Industry Deal Networks
             </h1>
@@ -76,8 +76,7 @@ export default async function ResearchPage() {
               A Graph-Based Analysis of Investment and Service Flows
             </p>
             <div className="research-authors">
-              <p className="research-authors-name">AI Bubble Map Research</p>
-              <p className="research-authors-affiliation">aibubblemap.com</p>
+              <p className="research-authors-name">Shouqi Han</p>
             </div>
           </header>
 
@@ -85,23 +84,26 @@ export default async function ResearchPage() {
           <section className="research-abstract">
             <p className="research-label" style={{ marginBottom: '0.75rem' }}>Abstract</p>
             <p className="research-abstract-text">
-              The artificial intelligence industry has experienced unprecedented capital formation, with major
-              technology companies engaging in complex webs of investments, cloud service commitments, and hardware
-              supply agreements. This paper presents a novel methodology for quantifying circular flows in corporate
-              deal networks—instances where capital or value flows between entities through multiple mechanisms,
-              creating closed loops of varying lengths. We introduce three complementary metrics: the <em>Loop Score</em>,
-              which measures circularity between company pairs; the <em>Cycle Score</em>, which extends this analysis
-              to multi-party cycles involving three or more companies; and the <em>Hub Score</em>, which aggregates
-              participation across all circular structures to identify systemically central entities. Analyzing {totalDeals} deals
-              among a purposefully selected set of {totalCompanies} prominent AI, cloud, and semiconductor companies from 2022–2025, we identify {totalCircularStructures} circular
-              structures: {loops.length} two-party loops and {multiPartyCycles.length} multi-party cycles. Our findings
-              reveal that circular patterns are prevalent among major AI companies in our sample, with certain cloud platforms
-              and infrastructure providers participating in numerous circular flows. We discuss implications for revenue recognition
-              analysis, valuation interdependence, systemic risk assessment, and market transparency.
+              The artificial intelligence industry has experienced unprecedented levels of capital
+              growth, with major technology companies participating in complex webs of investments,
+              cloud service commitments, and hardware supply agreements. This paper presents a
+              novel methodology to measure and quantify the flow of circular deals in corporate
+              ecosystems. These are instances where capital or value flows between companies through
+              different mechanisms, creating loops of different lengths. Three complementary metrics
+              are introduced: the <em>Loop Score</em>, which measures circularity between company pairs; the
+              <em>Cycle Score</em>, which tracks multi-party cycles involving three or more companies; and the
+              <em>Hub Score</em>, which aggregates participation across all circular structures to identify
+              systemically central entities. The paper analyzes {totalDeals} deals among a curated set of {totalCompanies} prominent
+              AI, cloud, and semiconductor companies from 2022–2025, and identifies {totalCircularStructures} total
+              circular structures consisting of {loops.length} two-party loops and {multiPartyCycles.length} multi-party cycles. The
+              paper&apos;s findings show that circular patterns are common among the major AI companies
+              within the sample, with certain infrastructure providers participating in numerous circular
+              flows. The paper will discuss implications for revenue recognition,
+              valuation interdependence, systemic risk assessment, and market transparency.
             </p>
             <div className="research-keywords">
               <strong>Keywords:</strong> network analysis, corporate finance, artificial intelligence,
-              circular flows, graph theory, deal networks, hub score, cycle detection, systemic risk
+              circular flows, graph theory, deal networks, hub score, cycle detection, systemic risk, AI Bubble
             </div>
           </section>
 
@@ -110,23 +112,26 @@ export default async function ResearchPage() {
             <h2 className="research-h2">1. Introduction</h2>
             <div className="research-prose">
               <p>
-                The rapid expansion of the artificial intelligence industry has catalyzed significant capital flows
-                among technology companies, venture capital firms, and cloud infrastructure providers. Between 2022
-                and 2025, publicly reported investments in AI companies exceeded $100 billion, while cloud service
-                commitments reached into the hundreds of billions of dollars (CB Insights, 2024; Bloomberg, 2025).
+                The rapid growth of the AI industry has led to huge amounts of capital flowing among
+                multitudes of different technology companies, venture capital firms, and cloud
+                infrastructure providers. Between the years 2022 and 2025, AI companies have received
+                investments upwards of $100 billion dollars, furthermore, cloud service commitments
+                have reached into the hundreds of billions of dollars (CB Insights, 2024; Bloomberg, 2025).
               </p>
               <p>
-                A notable feature of this capital formation is the emergence of reciprocal relationships between
-                investors and investees. Cloud providers invest equity in AI startups, who subsequently commit to
-                purchasing cloud services from their investors. Hardware manufacturers invest in cloud infrastructure
-                companies, who then purchase the manufacturer&apos;s products. These bidirectional flows create what we
-                term <em>circular patterns</em>—closed loops where value circulates between parties through
-                heterogeneous transaction types.
+                An important consequence of this capital growth is the emergence of reciprocal
+                relationships between investors and investees. For example, there are cloud providers that
+                invest equity in AI startups, who subsequently commit to purchasing cloud services from
+                the same investors. Hardware manufacturers also invest in cloud infrastructure
+                companies, who then purchase the manufacturer&apos;s products. These bidirectional flows
+                create what we call <em>circular patterns</em>. These are closed loops where value circulates
+                between parties through different transaction types.
               </p>
               <p>
-                While such arrangements may reflect rational business strategy and vertical integration, they raise
-                important questions for financial analysts, regulators, and market observers. How should &ldquo;organic&rdquo;
-                revenue growth be evaluated when a company&apos;s revenue derives substantially from entities in which
+                While these circular deals may simply be a result of rational business strategy and
+                vertical integration, they bring up important questions for financial analysts, regulators,
+                and investors. Namely, how should &ldquo;organic&rdquo; revenue growth be evaluated when a
+                substantial amount of a company&apos;s revenue comes from entities in which
                 it holds equity positions? What are the risk correlations among companies whose valuations depend
                 on contracts with one another?
               </p>
@@ -135,23 +140,25 @@ export default async function ResearchPage() {
             <div className="research-callout">
               <p className="research-callout-label">Research Question</p>
               <p className="research-callout-text">
-                Can we develop a quantitative metric for measuring circularity in corporate deal networks, and
-                what structural patterns emerge when applying this metric to the AI industry?
+                To what extent do circular capital flows characterize the AI industry&apos;s corporate deal
+                network, and what are the implications for systemic risk assessment?
               </p>
             </div>
 
             <div className="research-prose">
               <p>
-                This paper makes five contributions. First, we present a formal methodology for representing
-                corporate deal networks as directed graphs and detecting circular flows. Second, we introduce
-                the Loop Score, a composite metric that quantifies the strength of two-party bidirectional
-                relationships based on flow type diversity, monetary balance, and data quality. Third, we extend
-                this framework to detect and score multi-party cycles—circular flows involving three or more
-                companies—using depth-first search with a complementary Cycle Score metric. Fourth, we introduce
-                the Hub Score, which aggregates participation across both two-party loops and multi-party cycles
-                to identify systemically central entities. Fifth, we apply this methodology to a purposefully selected
-                dataset of {totalDeals} deals among prominent AI, cloud, and semiconductor companies, identifying {totalCircularStructures} circular structures
-                and the hub companies that occupy central positions within this network.
+                This paper offers five contributions. First, it will present a formal methodology for
+                representing corporate deal structures as directed graphs to detect and visualize circular
+                flows. Second, it introduces the <strong>Loop Score</strong>, a composite metric that measures the
+                strength of direct, two-party relationships based on flow type diversity, monetary balance,
+                and data quality. Third, the paper extends this framework to detect and measure
+                multi-party cycles, circular flows involving three or more companies, using depth first
+                search with a complementary <strong>Cycle Score</strong> metric. Fourth, the paper introduces the <strong>Hub
+                Score</strong>, which aggregates participation across both two-party loops and multi-party cycles
+                to identify companies that are central to the industry. Fifth, the paper applies this
+                methodology to a curated dataset of {totalDeals} deals among prominent AI, cloud, and
+                semiconductor companies, to identify circular structures as well as the hub companies
+                that occupy central positions within this network.
               </p>
             </div>
           </section>
@@ -160,70 +167,74 @@ export default async function ResearchPage() {
           <section className="research-section">
             <h2 className="research-h2">2. Background and Related Work</h2>
 
+            <div className="research-prose">
+              <p>
+                The current AI industry is characterized by a high degree of role overlap among its
+                largest participants. Cloud infrastructure providers also act as investors, compute
+                suppliers, and customers of the companies they invest in. This structural feature,
+                combined with rapid capital growth and increasing market concentration (Stanford HAI,
+                2024; Vipra &amp; Korinek, 2023), creates conditions where circular capital flows may
+                emerge at scale. Understanding these patterns and their broader implications requires
+                drawing on three bodies of literature: network analysis in financial systems, related-party
+                transaction analysis, and venture capital and platform economics.
+              </p>
+            </div>
+
             <h3 className="research-h3">2.1 Network Analysis in Finance</h3>
             <div className="research-prose">
               <p>
-                Graph-based methods have been widely applied to financial systems. Allen &amp; Gale (2000) established
-                the foundational model of financial contagion, demonstrating how shocks propagate through interbank
-                lending networks via direct balance sheet linkages—a mechanism we adapt to analyze how valuation
-                shocks might cascade through investor-investee relationships in AI deal networks. Gai &amp; Kapadia (2010)
-                extended this framework to show that highly interconnected nodes create systemic fragility; their
-                concept of interconnected institutions informs our Hub Score
-                metric, which quantifies the extent of a company&apos;s participation in circular flows within our sample. Corporate board interlocks have been analyzed for governance implications
-                (Mizruchi, 1996), while supply chain network analysis has emerged as a tool for understanding
-                firm-level risk propagation. Acemoglu et al. (2012) demonstrated that idiosyncratic shocks to
-                central firms can generate aggregate fluctuations when network connections are sufficiently
-                asymmetric—a finding with direct relevance to NVIDIA&apos;s structural position in AI deal networks.
+                Graph-based methods have been widely used within financial models. Allen &amp; Gale
+                (2000) created the foundational model of financial contagion, showcasing how shocks
+                can propagate through interbank lending networks via direct balance sheet linkages. This
+                is a mechanism that the paper then adapts to analyze how valuation shocks might cascade
+                and propagate through investor-investee relationships in AI deal networks. Gai &amp;
+                Kapadia (2010) extended this framework to showcase how highly interconnected nodes
+                can create systemic fragility. The Hub Score method, which quantifies the extent of a
+                company&apos;s participation in circular flows, is based on their concept of interconnected
+                institutions. Acemoglu et al. (2012) demonstrated that shocks to central firms can
+                propagate into aggregate fluctuations when network connections are asymmetric, a
+                dynamic this paper examines in the context of AI deal networks.
               </p>
             </div>
 
             <h3 className="research-h3">2.2 Circular Transactions and Related-Party Analysis</h3>
             <div className="research-prose">
               <p>
-                The accounting literature has examined related-party transactions and their implications for
-                financial statement quality. Gordon et al. (2004) documented that related-party transactions
-                are associated with weaker governance and lower earnings quality—a framework directly applicable
-                to the Microsoft-OpenAI relationship, where Microsoft simultaneously holds equity and receives
-                cloud revenue from its investee. Dechow et al. (2011) identified specific financial statement
-                patterns predictive of material misstatements, including unusual revenue growth from related
-                parties; our Loop Score operationalizes a similar early-warning function by flagging company
-                pairs with high-volume bidirectional flows. Circular trading patterns have been studied in equity
-                markets for manipulation detection (Aitken et al., 2015). Our work extends this literature by
-                providing a quantitative framework for detecting circular patterns across heterogeneous transaction
-                types (equity, services, hardware) rather than within a single asset class.
+                Previous financial literature has studied related-party transactions and how they can affect
+                financial statement quality. Gordon et al. (2004) documented that related party
+                transactions are associated with weaker governance and lower earnings quality; this is a
+                framework directly applicable to the Microsoft-OpenAI relationship, where Microsoft
+                holds equity and receives cloud revenue from OpenAI, where it holds a significant equity
+                position. Dechow et al. (2011) identified financial statement patterns predictive of
+                material misstatements, including unusual revenue growth from related parties. While
+                this paper does not assess the legitimacy of any specific transaction, the Loop Score
+                draws on a similar analytical intuition: that bidirectional flows between related parties
+                warrant closer examination. Circular trading patterns have been studied in equity markets
+                for manipulation detection (Aitken et al., 2015). The paper extends this literature by
+                providing a quantitative framework for detecting circular patterns across heterogeneous
+                transaction types (equity, services, hardware) rather than within a single asset class.
               </p>
             </div>
 
             <h3 className="research-h3">2.3 Venture Capital and Platform Networks</h3>
             <div className="research-prose">
               <p>
-                The venture capital literature documents extensive syndication networks. Hochberg, Ljungqvist &amp;
-                Lu (2007) demonstrated that VC network centrality predicts fund performance, establishing that
-                investor relationships have real economic consequences beyond capital provision. The AI industry
-                exhibits an intensified version of this phenomenon: cloud providers are not merely co-investors
-                but also customers and infrastructure suppliers to their portfolio companies, creating multilayer
-                dependencies absent in traditional VC syndication.
+                Venture capital literature has documented extensive syndication networks. Hochberg,
+                Ljungqvist &amp; Lu (2007) demonstrated that VC network centrality predicts fund
+                performance, establishing that investor relationships have real economic consequences
+                beyond capital provision. The AI industry exhibits an intensified version of this
+                phenomenon: cloud providers are not merely investors but also customers and
+                infrastructure suppliers to the companies within their portfolio. This creates multilayer
+                dependencies that are far more concentrated than those usually seen in traditional VC
+                syndication.
               </p>
               <p>
-                Platform economics offers additional theoretical grounding. Rochet &amp; Tirole (2003, 2006) formalized
-                two-sided market dynamics where platforms subsidize one side to capture value from another. Cloud
-                providers investing in AI startups who then consume cloud services exemplifies this logic: equity
-                investments function as customer acquisition costs, with returns captured through service revenue
+                Platform economics offers additional theoretical grounding. Rochet &amp; Tirole (2003,
+                2006) formalized two-sided market dynamics where platforms subsidize one side to
+                capture value from another. Cloud providers investing in AI startups who then consume
+                cloud services exemplifies this logic: equity investments may also have the added
+                function of customer acquisition costs, with returns captured through service revenue
                 rather than traditional exit multiples.
-              </p>
-            </div>
-
-            <h3 className="research-h3">2.4 AI Industry Structure</h3>
-            <div className="research-prose">
-              <p>
-                Prior analyses of the AI industry have focused on investment trends (Stanford HAI, 2024),
-                compute requirements (Sevilla et al., 2022), and market concentration (Vipra &amp; Korinek, 2023).
-                Historical parallels exist in the dot-com era, where Ofek &amp; Richardson (2003) documented how
-                lockup expirations and insider relationships contributed to valuation instability—dynamics potentially
-                relevant to AI companies whose cloud commitments create long-term liability structures. To our
-                knowledge, this is the first study to systematically map and quantify circular deal patterns in
-                the AI ecosystem, applying network methodology from financial contagion literature to corporate
-                deal structures.
               </p>
             </div>
           </section>
@@ -235,26 +246,33 @@ export default async function ResearchPage() {
             <h3 className="research-h3">3.1 Data Collection</h3>
             <div className="research-prose">
               <p>
-                We compiled a dataset of {totalDeals} deals involving {totalCompanies} companies from publicly available sources
-                including SEC filings (10-K, 8-K, S-1), official press releases, and financial news reporting
-                from Bloomberg, Reuters, CNBC, and The Information. Data collection covered the period from
-                January 2022 to January 2025.
+                To collect the needed data, a curated dataset of {totalDeals} deals spanning across {totalCompanies} companies
+                was constructed from publicly available sources including SEC filings, official press
+                releases and financial news reporting from sources such as Bloomberg, Reuters, CNBC,
+                and The Information. The data collected spanned from January 2022 to January 2025.
               </p>
               <p>
-                Our sample comprises approximately {totalCompanies} major AI, cloud, and semiconductor companies selected
-                based on three criteria: (1) market leadership or valuation exceeding $1 billion,
-                (2) documented participation in AI-related deals during 2022–2025, and (3) publicly
-                verifiable deal information via SEC filings or press releases. This is a purposefully
-                selected sample of prominent industry participants, not a random sample of the AI ecosystem.
-                Findings should be interpreted as patterns among these specific companies rather than
-                population-level estimates.
+                The sample companies were selected based on three criteria:
+              </p>
+            </div>
+            <ol className="research-list">
+              <li>Market leadership or valuation exceeding $1 billion</li>
+              <li>Documented participation within AI related deals from 2022 - 2025</li>
+              <li>Publicly verifiable information via SEC filings or press releases</li>
+            </ol>
+            <div className="research-prose">
+              <p>
+                This dataset was purposefully selected and prominent participants within the industry
+                were used. It is not a random sample of the AI ecosystem. These findings should be
+                interpreted as patterns among the specific dataset and not a comprehensive population
+                estimate.
               </p>
               <p>
-                Each deal record includes the following attributes:
+                <strong>Each deal record includes the following attributes:</strong>
               </p>
             </div>
             <ul className="research-list">
-              <li><strong>Deal Type (τ):</strong> Investment, Cloud Commitment, Supply Agreement, Partnership, Acquisition, or Revenue Share</li>
+              <li><strong>Deal Type (τ):</strong> Investment, Cloud Commitment, Supply Agreement, Partnership, Acquisition</li>
               <li><strong>Flow Type (φ):</strong> Money, Compute/Hardware, Service, or Equity</li>
               <li><strong>Direction:</strong> For each party, whether value flows out (source) or in (recipient)</li>
               <li><strong>Amount:</strong> Transaction value in USD, where disclosed</li>
@@ -299,8 +317,9 @@ export default async function ResearchPage() {
             <h3 className="research-h3">3.2 Graph Representation</h3>
             <div className="research-prose">
               <p>
-                We model the deal network as a directed multigraph G = (V, E), where V represents companies
-                and E represents directed edges derived from deals. Each edge e ∈ E is characterized by:
+                The paper models the deal network as a directed multigraph G = (V, E), where V
+                represents companies and E represents directed edges from deals. Each edge e ∈ E is
+                characterized by:
               </p>
             </div>
             <ul className="research-list">
@@ -308,14 +327,18 @@ export default async function ResearchPage() {
               <li>Target node (to): The company receiving value</li>
               <li>Edge type (τ): The deal type classification</li>
               <li>Flow type (φ): The type of value being transferred</li>
-              <li>Weight (w): The transaction amount in USD</li>
-              <li>Confidence (c): The average confidence score across sources</li>
+              <li>Weight (w): The transaction amount in USD, where disclosed. When transaction amounts are undisclosed, w is set to null. Such edges are retained in the graph for structural analysis but excluded from monetary balance calculations.</li>
+              <li>Confidence (c): The mean of all source-level confidence ratings across deals contributing to the edge.</li>
             </ul>
             <div className="research-prose">
               <p>
-                Deals with multiple parties of the same role are represented as multiple edges. Direction
-                is inferred from party roles: INVESTOR→INVESTEE, CUSTOMER→SUPPLIER, ACQUIRER→TARGET.
-                Partnership deals without clear directionality are represented as bidirectional edges.
+                When multiple deals share the same source and target companies, they are aggregated
+                into a single edge. Deals involving multiple parties of the same role (e.g., three
+                co-investors in one round) are represented as separate edges. Direction is inferred from
+                party roles: INVESTOR - INVESTEE, CUSTOMER - SUPPLIER, ACQUIRER -
+                TARGET. Partnership deals without clear directionality are represented as a single edge
+                with a non-directional flag; these edges do not generate reverse edges and therefore
+                cannot independently produce loops.
               </p>
             </div>
 
