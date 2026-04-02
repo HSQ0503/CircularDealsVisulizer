@@ -334,11 +334,11 @@ export async function computeNullModel(
   const fullConfig: NullModelConfig = { ...DEFAULT_CONFIG, ...config };
   const startTime = Date.now();
 
-  // Convert to simple edges
-  const simpleEdges: SimpleEdge[] = realEdges.map(e => ({
-    from: e.from,
-    to: e.to,
-  }));
+  // Convert to simple edges, excluding non-directional partnerships to match
+  // the filtering applied in detectLoops and detectMultiPartyCycles
+  const simpleEdges: SimpleEdge[] = realEdges
+    .filter(e => e.isDirectional)
+    .map(e => ({ from: e.from, to: e.to }));
   const nodeIds = realNodes.map(n => n.id);
 
   // Real metrics

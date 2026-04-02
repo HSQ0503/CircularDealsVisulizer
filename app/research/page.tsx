@@ -95,8 +95,8 @@ export default async function ResearchPage() {
               participation across all circular structures to identify systemically central entities. Analyzing {totalDeals} deals
               among a purposefully selected set of {totalCompanies} prominent AI, cloud, and semiconductor companies from 2022–2025, we identify {totalCircularStructures} circular
               structures: {loops.length} two-party loops and {multiPartyCycles.length} multi-party cycles. Our findings
-              reveal that circular patterns are prevalent among major AI companies in our sample, with certain infrastructure providers
-              participating in numerous circular flows. We discuss implications for revenue recognition
+              reveal that circular patterns are prevalent among major AI companies in our sample, with certain cloud platforms
+              and infrastructure providers participating in numerous circular flows. We discuss implications for revenue recognition
               analysis, valuation interdependence, systemic risk assessment, and market transparency.
             </p>
             <div className="research-keywords">
@@ -945,23 +945,25 @@ export default async function ResearchPage() {
             <h3 className="research-h3">4.4 Case Studies</h3>
             <div className="research-prose">
               <p>
-                <strong>Case 1: Microsoft–OpenAI (Score: ~0.72).</strong> Microsoft has invested
+                <strong>Case 1: Microsoft–OpenAI (Score: ~0.83).</strong> Microsoft has invested
                 an estimated $10–13 billion in OpenAI equity. OpenAI committed $250 billion to Microsoft Azure cloud
                 services and $300 billion to Oracle infrastructure (with Microsoft partnership components). This
                 represents a canonical example of investor-customer circularity: equity flows from cloud provider
-                to AI company, and cloud revenue flows back. The balance ratio is relatively low due to the
-                asymmetry between investment and cloud commitment amounts.
+                to AI company, and cloud revenue flows back. The high score reflects cross-type flow diversity
+                (money vs. services) and strong source confidence, despite the asymmetry between investment
+                and cloud commitment amounts.
               </p>
               <p>
-                <strong>Case 2: NVIDIA–CoreWeave (Score: ~0.75).</strong> NVIDIA invested
-                $350 million in CoreWeave. CoreWeave deployed this capital (along with other financing) to
-                purchase 250,000+ NVIDIA GPUs. Subsequently, NVIDIA signed deals worth $7.6 billion to rent
-                compute capacity from CoreWeave&apos;s data centers. This creates a three-phase cycle: equity →
-                hardware purchase → capacity rental. NVIDIA effectively rents back infrastructure built on
-                its own products. This structure exemplifies Acemoglu et al.&apos;s (2012) supply chain propagation
-                mechanism: a shock to NVIDIA (e.g., chip shortages) would impair CoreWeave&apos;s expansion, which
-                would reduce capacity available to NVIDIA&apos;s own cloud customers—creating a feedback loop
-                absent in linear supply chains.
+                <strong>Case 2: NVIDIA–xAI (Score: ~0.78).</strong> NVIDIA invested
+                $2 billion in xAI. xAI then purchased an estimated $20 billion in NVIDIA GPUs for its
+                Colossus 2 supercomputer. This is a clean investor-customer loop: equity flows from hardware
+                manufacturer to AI company, and hardware purchase revenue flows back. The relationship
+                exemplifies Acemoglu et al.&apos;s (2012) supply chain propagation mechanism: a shock to NVIDIA
+                (e.g., chip shortages) would impair xAI&apos;s infrastructure buildout, while reduced xAI demand
+                would affect NVIDIA&apos;s revenue—creating a feedback loop absent in linear supply chains.
+                NVIDIA–CoreWeave exhibits a similar pattern through multi-party cycles: NVIDIA invested in
+                CoreWeave, CoreWeave purchases NVIDIA GPUs, and NVIDIA rents back cloud capacity from
+                CoreWeave&apos;s data centers.
               </p>
               <p>
                 <strong>Case 3: Google–Anthropic.</strong> Google invested $2.3 billion
@@ -1041,11 +1043,11 @@ export default async function ResearchPage() {
               </p>
               <p>
                 NVIDIA occupies a unique structural position: it simultaneously serves as hardware supplier
-                (GPUs to cloud providers), equity investor (stakes in CoreWeave, OpenAI, and others), and
+                (GPUs to cloud providers), equity investor (stakes in xAI, OpenAI, and others), and
                 customer (renting cloud capacity). This multi-role centrality suggests that NVIDIA&apos;s
-                financial performance is particularly interconnected with the broader AI ecosystem. CoreWeave
-                functions as an infrastructure intermediary, receiving investment from chip manufacturers,
-                purchasing their hardware, and selling compute services to multiple parties.
+                financial performance is particularly interconnected with the broader AI ecosystem. Microsoft
+                and Anthropic also rank highly, reflecting their central roles as cloud provider-investor
+                and multi-cloud investee respectively.
               </p>
             </div>
 
@@ -1198,7 +1200,7 @@ export default async function ResearchPage() {
               <li>
                 <strong>Network Prominence:</strong> The concentration of circular flows
                 around hub nodes is quantified by the Hub Score. Companies with high Hub Scores (particularly
-                NVIDIA and CoreWeave) participate in multiple circular relationships within our sample,
+                Microsoft, NVIDIA, and Anthropic) participate in multiple circular relationships within our sample,
                 suggesting these entities occupy prominent positions in the disclosed deal network that may
                 warrant closer monitoring. The Hub Score provides a metric for identifying such central entities.
               </li>
@@ -1218,8 +1220,9 @@ export default async function ResearchPage() {
                 Our Hub Score extends Acemoglu et al.&apos;s (2012) centrality measure by incorporating participation
                 across circular structures rather than counting direct connections. While Acemoglu et al. show
                 that shocks to central nodes propagate downstream, the AI network&apos;s circular topology means
-                that shocks can return to their origin—NVIDIA&apos;s difficulties could impair CoreWeave, whose
-                reduced capacity affects OpenAI, whose decreased Azure consumption impacts Microsoft, which may
+                that shocks can return to their origin—NVIDIA&apos;s difficulties could impair xAI (as both
+                investor and GPU supplier), whose decreased infrastructure spending impacts NVIDIA&apos;s revenue,
+                while simultaneously affecting OpenAI&apos;s Azure consumption which impacts Microsoft, which may
                 then reduce investment in NVIDIA-dependent startups.
               </p>
               <p>
@@ -1478,8 +1481,8 @@ export default async function ResearchPage() {
                 multi-party cycles ({multiPartyCycles.length}) substantially outnumbering two-party loops
                 ({loops.length}). This indicates that value frequently circulates through intermediary nodes
                 rather than flowing directly between counterparties. Infrastructure providers—particularly
-                NVIDIA, which participates in over 100 circular structures—occupy uniquely central positions,
-                serving simultaneously as suppliers, investors, and customers within the same network.
+                Microsoft (35 structures) and NVIDIA (32 structures)—occupy uniquely central positions,
+                serving simultaneously as investors, cloud providers, and customers within the same network.
               </p>
               <p>
                 We do not claim these patterns constitute market manipulation or indicate a &ldquo;bubble&rdquo;
@@ -1507,10 +1510,10 @@ export default async function ResearchPage() {
                 Case 1: OpenAI-Microsoft-NVIDIA
               </Link>
               <Link
-                href="/graph?companies=coreweave,nvidia,microsoft,openai&caseStudy=coreweave-loop"
+                href="/graph?companies=nvidia,xai&caseStudy=nvidia-xai"
                 className="research-btn research-btn-secondary"
               >
-                Case 2: CoreWeave-NVIDIA
+                Case 2: NVIDIA-xAI
               </Link>
               <Link
                 href="/graph?companies=amazon,google,anthropic&caseStudy=anthropic-war"

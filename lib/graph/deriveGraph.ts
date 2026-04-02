@@ -290,9 +290,13 @@ function aggregateAmountText(texts: string[]): string | null {
 // ============================================================================
 
 function detectLoops(edges: EdgeDTO[], nodes: NodeDTO[]): LoopDTO[] {
+  // Exclude non-directional edges (partnerships) — they don't represent
+  // clear value flow direction so cannot constitute circular capital flows
+  const directionalEdges = edges.filter(e => e.isDirectional);
+
   // Index edges by direction for quick lookup
   const edgeMap = new Map<string, EdgeDTO>();
-  for (const edge of edges) {
+  for (const edge of directionalEdges) {
     const key = `${edge.from}→${edge.to}`;
     // If multiple edges same direction, keep the one with higher amount
     const existing = edgeMap.get(key);
@@ -305,7 +309,7 @@ function detectLoops(edges: EdgeDTO[], nodes: NodeDTO[]): LoopDTO[] {
   const seen = new Set<string>();
   const nodeMap = new Map(nodes.map(n => [n.id, n]));
 
-  for (const edge of edges) {
+  for (const edge of directionalEdges) {
     // Check for reverse edge (B → A when we have A → B)
     const reverseKey = `${edge.to}→${edge.from}`;
     const reverseEdge = edgeMap.get(reverseKey);
@@ -467,9 +471,12 @@ function detectMultiPartyCycles(
   nodes: NodeDTO[],
   maxLength: number = 5
 ): MultiPartyCycleDTO[] {
+  // Exclude non-directional edges (partnerships) — same rationale as detectLoops
+  const directionalEdges = edges.filter(e => e.isDirectional);
+
   // Build adjacency list: nodeId -> outgoing edges
   const adjacency = new Map<string, EdgeDTO[]>();
-  for (const edge of edges) {
+  for (const edge of directionalEdges) {
     if (!adjacency.has(edge.from)) adjacency.set(edge.from, []);
     adjacency.get(edge.from)!.push(edge);
   }
