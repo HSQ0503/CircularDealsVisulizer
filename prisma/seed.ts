@@ -468,8 +468,9 @@ const DEALS: DealData[] = [
     dealType: DealType.INVESTMENT,
     flowType: FlowType.MONEY,
     announcedAt: new Date('2025-09-22'),
+    amountUSD: 10_000_000_000,
     amountUSDMax: 100_000_000_000,
-    amountText: 'Up to $100 billion (ten $10B tranches)',
+    amountText: '$10B confirmed first tranche (up to $100B across ten tranches)',
     dataStatus: DataStatus.CONFIRMED,
     tags: ['investment', 'progressive', 'infrastructure', 'stargate'],
     parties: [

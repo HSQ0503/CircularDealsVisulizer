@@ -1,0 +1,1144 @@
+import Link from 'next/link'
+import { ThemeToggle } from '@/components/ThemeToggle'
+import {
+  TotalDeals, TotalCompanies, TotalCircularStructures,
+  LoopCount, CycleCount, EdgeCount,
+  MeanLoopScore, MeanCycleScore,
+  LoopsTable, NullModelSection,
+  HubScoreTable, TopHubProse,
+  CyclesTable,
+  SensitivityLoopTable, SensitivityHubTable, StabilityCallout,
+} from '@/components/research'
+
+{/* ============================================================ */}
+{/* HEADER                                                        */}
+{/* ============================================================ */}
+
+<header className="research-header">
+  <div className="research-header-inner">
+    <Link href="/" className="research-back-link">
+      &larr; Back to AI Bubble Map
+    </Link>
+    <div className="flex items-center gap-3">
+      <Link href="/graph" className="research-nav-link">
+        Interactive Explorer
+      </Link>
+      <ThemeToggle />
+    </div>
+  </div>
+</header>
+
+<main style={{ maxWidth: '42rem', margin: '0 auto', padding: '3rem 1.5rem' }}>
+<article>
+
+{/* ============================================================ */}
+{/* TITLE BLOCK                                                   */}
+{/* ============================================================ */}
+
+<header className="research-title-block">
+  <p className="research-paper-label">Working Paper — January 2026</p>
+  <h1 className="research-h1">
+    Quantifying Circularity in AI Industry Deal Networks
+  </h1>
+  <p className="research-h1-subtitle" style={{ marginTop: '0.75rem' }}>
+    A Graph-Based Analysis of Investment and Service Flows
+  </p>
+  <div className="research-authors">
+    <p className="research-authors-name">Shouqi Han</p>
+  </div>
+</header>
+
+{/* ============================================================ */}
+{/* ABSTRACT                                                      */}
+{/* ============================================================ */}
+
+<section className="research-abstract">
+  <p className="research-label" style={{ marginBottom: '0.75rem' }}>Abstract</p>
+  <p className="research-abstract-text">
+    The artificial intelligence industry has experienced unprecedented levels of capital
+    growth, with major technology companies participating in complex webs of investments,
+    cloud service commitments, and hardware supply agreements. This paper presents a
+    novel methodology to measure and quantify the flow of circular deals in corporate
+    ecosystems. These are instances where capital or value flows between companies through
+    different mechanisms, creating loops of different lengths. Three complementary metrics
+    are introduced: the <em>Loop Score</em>, which measures circularity between company pairs; the
+    <em>Cycle Score</em>, which tracks multi-party cycles involving three or more companies; and the
+    <em>Hub Score</em>, which aggregates participation across all circular structures to identify
+    systemically central entities. The paper analyzes <TotalDeals /> deals among a curated set of <TotalCompanies /> prominent
+    AI, cloud, and semiconductor companies from 2022–2025, and identifies <TotalCircularStructures /> total
+    circular structures consisting of <LoopCount /> two-party loops and <CycleCount /> multi-party cycles. The
+    paper&apos;s findings show that circular patterns are common among the major AI companies
+    within the sample, with certain infrastructure providers participating in numerous circular
+    flows. The paper will discuss implications for revenue recognition,
+    valuation interdependence, systemic risk assessment, and market transparency.
+  </p>
+  <div className="research-keywords">
+    <strong>Keywords:</strong> network analysis, corporate finance, artificial intelligence,
+    circular flows, graph theory, deal networks, hub score, cycle detection, systemic risk, AI Bubble
+  </div>
+</section>
+
+{/* ============================================================ */}
+{/* 1. INTRODUCTION                                               */}
+{/* ============================================================ */}
+
+<section className="research-section">
+
+## 1. Introduction
+
+<div className="research-prose">
+
+The rapid growth of the AI industry has led to huge amounts of capital flowing among
+multitudes of different technology companies, venture capital firms, and cloud
+infrastructure providers. Between the years 2022 and 2025, AI companies have received
+investments upwards of $100 billion dollars, furthermore, cloud service commitments
+have reached into the hundreds of billions of dollars (CB Insights, 2024; Bloomberg, 2025).
+
+An important consequence of this capital growth is the emergence of reciprocal
+relationships between investors and investees. For example, there are cloud providers that
+invest equity in AI startups, who subsequently commit to purchasing cloud services from
+the same investors. Hardware manufacturers also invest in cloud infrastructure
+companies, who then purchase the manufacturer&apos;s products. These bidirectional flows
+create what we call *circular patterns*. These are closed loops where value circulates
+between parties through different transaction types.
+
+While these circular deals may simply be a result of rational business strategy and
+vertical integration, they bring up important questions for financial analysts, regulators,
+and investors. Namely, how should &ldquo;organic&rdquo; revenue growth be evaluated when a
+substantial amount of a company&apos;s revenue comes from entities in which
+it holds equity positions? What are the risk correlations among companies whose valuations depend
+on contracts with one another?
+
+</div>
+
+<div className="research-callout">
+  <p className="research-callout-label">Research Question</p>
+  <p className="research-callout-text">
+    To what extent do circular capital flows characterize the AI industry&apos;s corporate deal
+    network, and what are the implications for systemic risk assessment?
+  </p>
+</div>
+
+<div className="research-prose">
+
+This paper offers five contributions. First, it will present a formal methodology for
+representing corporate deal structures as directed graphs to detect and visualize circular
+flows. Second, it introduces the **Loop Score**, a composite metric that measures the
+strength of direct, two-party relationships based on flow type diversity, monetary balance,
+and data quality. Third, the paper extends this framework to detect and measure
+multi-party cycles, circular flows involving three or more companies, using depth first
+search with a complementary **Cycle Score** metric. Fourth, the paper introduces the **Hub
+Score**, which aggregates participation across both two-party loops and multi-party cycles
+to identify companies that are central to the industry. Fifth, the paper applies this
+methodology to a curated dataset of <TotalDeals /> deals among prominent AI, cloud, and
+semiconductor companies, to identify circular structures as well as the hub companies
+that occupy central positions within this network.
+
+</div>
+
+</section>
+
+{/* ============================================================ */}
+{/* 2. BACKGROUND AND RELATED WORK                               */}
+{/* ============================================================ */}
+
+<section className="research-section">
+
+## 2. Background and Related Work
+
+<div className="research-prose">
+
+The current AI industry is characterized by a high degree of role overlap among its
+largest participants. Cloud infrastructure providers also act as investors, compute
+suppliers, and customers of the companies they invest in. This structural feature,
+combined with rapid capital growth and increasing market concentration (Stanford HAI,
+2024; Vipra &amp; Korinek, 2023), creates conditions where circular capital flows may
+emerge at scale. Understanding these patterns and their broader implications requires
+drawing on three bodies of literature: network analysis in financial systems, related-party
+transaction analysis, and venture capital and platform economics.
+
+</div>
+
+### 2.1 Network Analysis in Finance
+
+<div className="research-prose">
+
+Graph-based methods have been widely used within financial models. Allen &amp; Gale
+(2000) created the foundational model of financial contagion, showcasing how shocks
+can propagate through interbank lending networks via direct balance sheet linkages. This
+is a mechanism that the paper then adapts to analyze how valuation shocks might cascade
+and propagate through investor-investee relationships in AI deal networks. Gai &amp;
+Kapadia (2010) extended this framework to showcase how highly interconnected nodes
+can create systemic fragility. The Hub Score method, which quantifies the extent of a
+company&apos;s participation in circular flows, is based on their concept of interconnected
+institutions. Acemoglu et al. (2012) demonstrated that shocks to central firms can
+propagate into aggregate fluctuations when network connections are asymmetric, a
+dynamic this paper examines in the context of AI deal networks.
+
+</div>
+
+### 2.2 Circular Transactions and Related-Party Analysis
+
+<div className="research-prose">
+
+Previous financial literature has studied related-party transactions and how they can affect
+financial statement quality. Gordon et al. (2004) documented that related party
+transactions are associated with weaker governance and lower earnings quality; this is a
+framework directly applicable to the Microsoft-OpenAI relationship, where Microsoft
+holds equity and receives cloud revenue from OpenAI, where it holds a significant equity
+position. Dechow et al. (2011) identified financial statement patterns predictive of
+material misstatements, including unusual revenue growth from related parties. While
+this paper does not assess the legitimacy of any specific transaction, the Loop Score
+draws on a similar analytical intuition: that bidirectional flows between related parties
+warrant closer examination. Circular trading patterns have been studied in equity markets
+for manipulation detection (Aitken et al., 2015). The paper extends this literature by
+providing a quantitative framework for detecting circular patterns across heterogeneous
+transaction types (equity, services, hardware) rather than within a single asset class.
+
+</div>
+
+### 2.3 Venture Capital and Platform Networks
+
+<div className="research-prose">
+
+Venture capital literature has documented extensive syndication networks. Hochberg,
+Ljungqvist &amp; Lu (2007) demonstrated that VC network centrality predicts fund
+performance, establishing that investor relationships have real economic consequences
+beyond capital provision. The AI industry exhibits an intensified version of this
+phenomenon: cloud providers are not merely investors but also customers and
+infrastructure suppliers to the companies within their portfolio. This creates multilayer
+dependencies that are far more concentrated than those usually seen in traditional VC
+syndication.
+
+Platform economics offers additional theoretical grounding. Rochet &amp; Tirole (2003,
+2006) formalized two-sided market dynamics where platforms subsidize one side to
+capture value from another. Cloud providers investing in AI startups who then consume
+cloud services exemplifies this logic: equity investments may also have the added
+function of customer acquisition costs, with returns captured through service revenue
+rather than traditional exit multiples.
+
+</div>
+
+</section>
+
+{/* ============================================================ */}
+{/* 3. METHODOLOGY                                                */}
+{/* ============================================================ */}
+
+<section className="research-section">
+
+## 3. Methodology
+
+### 3.1 Data Collection
+
+<div className="research-prose">
+
+To collect the needed data, a curated dataset of <TotalDeals /> deals spanning across <TotalCompanies /> companies
+was constructed from publicly available sources including SEC filings, official press
+releases and financial news reporting from sources such as Bloomberg, Reuters, CNBC,
+and The Information. The data collected spanned from January 2022 to January 2025.
+
+The sample companies were selected based on three criteria:
+
+</div>
+
+1. Market leadership or valuation exceeding $1 billion
+2. Documented participation within AI related deals from 2022 - 2025
+3. Publicly verifiable information via SEC filings or press releases
+
+<div className="research-prose">
+
+This dataset was purposefully selected and prominent participants within the industry
+were used. It is not a random sample of the AI ecosystem. These findings should be
+interpreted as patterns among the specific dataset and not a comprehensive population
+estimate.
+
+**Each deal record includes the following attributes:**
+
+</div>
+
+- **Deal Type (τ):** Investment, Cloud Commitment, Supply Agreement, Partnership, Acquisition
+- **Flow Type (φ):** Money, Compute/Hardware, Service, or Equity
+- **Direction:** For each party, whether value flows out (source) or in (recipient)
+- **Amount:** Transaction value in USD, where disclosed
+- **Data Status:** Confirmed (official announcement with specific figures) or Estimated (reported but unconfirmed)
+- **Confidence Score (c):** 1–5 rating based on source reliability and corroboration
+
+<div className="research-table-wrapper">
+  <p className="research-table-caption">Table 1: Dataset Composition by Deal Type</p>
+  <table className="research-table">
+    <thead>
+      <tr>
+        <th>Deal Type</th>
+        <th className="text-right">Count</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Cloud Commitment</td>
+        <td className="text-right research-table-mono">25</td>
+      </tr>
+      <tr>
+        <td>Investment</td>
+        <td className="text-right research-table-mono">23</td>
+      </tr>
+      <tr>
+        <td>Partnership</td>
+        <td className="text-right research-table-mono">24</td>
+      </tr>
+      <tr>
+        <td>Supply Agreement</td>
+        <td className="text-right research-table-mono">16</td>
+      </tr>
+      <tr>
+        <td>Acquisition</td>
+        <td className="text-right research-table-mono">3</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+### 3.2 Graph Representation
+
+<div className="research-prose">
+
+The paper models the deal network as a directed multigraph G = (V, E), where V
+represents companies and E represents directed edges from deals. Each edge e ∈ E is
+characterized by:
+
+</div>
+
+- Source node (from): The company from which value flows
+- Target node (to): The company receiving value
+- Edge type (τ): The deal type classification
+- Flow type (φ): The type of value being transferred
+- Weight (w): The transaction amount in USD, where disclosed. When transaction amounts are undisclosed, w is set to null. Such edges are retained in the graph for structural analysis but excluded from monetary balance calculations.
+- Confidence (c): The mean of all source-level confidence ratings across deals contributing to the edge.
+
+<div className="research-prose">
+
+When multiple deals share the same source and target companies, they are aggregated
+into a single edge. Deals involving multiple parties of the same role (e.g., three
+co-investors in one round) are represented as separate edges. Direction is inferred from
+party roles: INVESTOR - INVESTEE, CUSTOMER - SUPPLIER, ACQUIRER -
+TARGET. Partnership deals without clear directionality are represented as a single edge
+with a non-directional flag; these edges do not generate reverse edges and therefore
+cannot independently produce loops.
+
+</div>
+
+### 3.3 Two-Party Loop Detection
+
+<div className="research-prose">
+
+The paper defines a *two-party loop* as a pair of edges (e₁, e₂) where e₁ connects company
+A to company B, and e₂ connects B to A. This can be expressed formally with:
+
+</div>
+
+<div className="research-code">
+  Loop(A, B) = ∃ e₁, e₂ ∈ E : (e₁.from = A ∧ e₁.to = B) ∧ (e₂.from = B ∧ e₂.to = A)
+</div>
+
+<div className="research-prose">
+
+Two-party loop detection is performed by constructing an edge index keyed by (from, to) pairs
+and checking for the existence of reverse edges. This algorithm runs in O(|E|) time. Two-party
+loops represent the simplest form of circularity—direct reciprocal flows between two entities.
+
+</div>
+
+### 3.4 Loop Score Metric (Two-Party)
+
+<div className="research-prose">
+
+In order to actually quantify the strength and significance of the detected two-party loops, the paper introduces the *Loop Score*,
+a composite metric in the range [0, 1] that combines three factors:
+
+</div>
+
+<div className="research-definition">
+  <p className="research-definition-title">Definition: Loop Score</p>
+  <p className="research-formula">
+    S(e₁, e₂) = α · D(e₁, e₂) + β · B(e₁, e₂) + γ · C(e₁, e₂)
+  </p>
+  <p className="research-definition-note">where α = 0.35, β = 0.35, γ = 0.30, and:</p>
+  <div className="research-definition-item">
+    <p className="research-definition-item-title">Flow Diversity D(e₁, e₂)</p>
+    <p className="research-definition-item-text">D = 1.0 if φ(e₁) ≠ φ(e₂), else D = 0.7</p>
+    <p className="research-definition-item-note">
+      Loops with different flow types (e.g., equity in, services out) indicate stronger
+      circular patterns than same-type bidirectional flows.
+    </p>
+  </div>
+  <div className="research-definition-item">
+    <p className="research-definition-item-title">Balance Ratio B(e₁, e₂)</p>
+    <p className="research-definition-item-text">B = 0.5 + 0.5 · min(w₁, w₂) / max(w₁, w₂)</p>
+    <p className="research-definition-item-note">
+      Yields values in [0.5, 1.0]. Symmetric monetary amounts suggest mutual dependence;
+      highly imbalanced flows receive lower scores.
+    </p>
+  </div>
+  <div className="research-definition-item">
+    <p className="research-definition-item-title">Confidence Factor C(e₁, e₂)</p>
+    <p className="research-definition-item-text">C = (c₁ + c₂) / 10</p>
+    <p className="research-definition-item-note">
+      Normalizes the average confidence score to [0, 1], weighting loops with better-sourced
+      data more heavily.
+    </p>
+  </div>
+</div>
+
+<div className="research-prose">
+
+The weighting scheme (α = β = 0.35, γ = 0.30) was selected to balance structural characteristics
+(diversity, balance) against data quality considerations. We provide empirical sensitivity
+analysis in Section 6.3, demonstrating ranking robustness across alternative weighting schemes with further justifications.
+
+</div>
+
+### 3.5 Hub Score (Systemic Importance)
+
+<div className="research-prose">
+
+To quantify company-level centrality in circular flows, the paper defines the Hub Score as the sum of
+scores across all circular structures which includes both two-party loops and multi-party cycles - in which
+a company participates:
+
+</div>
+
+<div className="research-definition">
+  <p className="research-definition-title">Definition: Hub Score</p>
+  <p className="research-formula">
+    H(company) = Σ S(structure) for all circular structures containing company
+  </p>
+  <p className="research-definition-note">
+    Where S(structure) is the Loop Score for two-party loops or Cycle Score for multi-party cycles.
+    Companies with higher Hub Scores participate in more circular structures and/or stronger ones.
+    This aggregation across both structure types captures the full extent of a company&apos;s
+    entanglement in circular flows.
+  </p>
+  <div className="research-definition-item">
+    <p className="research-definition-item-title">Normalized Hub Score</p>
+    <p className="research-definition-item-text" style={{ fontFamily: 'ui-monospace, monospace' }}>
+      H<sub>norm</sub>(company) = H(company) / max(H)
+    </p>
+    <p className="research-definition-item-note">
+      Yields values in [0, 1], allowing comparison across networks of different sizes and densities.
+    </p>
+  </div>
+  <div className="research-definition-item">
+    <p className="research-definition-item-title">Supporting Metrics</p>
+    <ul style={{ fontSize: '0.75rem', color: 'var(--research-text-muted)', marginTop: '0.25rem', paddingLeft: '1.25rem' }}>
+      <li><strong>Structure Count:</strong> Total number of loops and cycles the company participates in</li>
+      <li><strong>Average Score:</strong> Mean score across all the company&apos;s circular structures</li>
+      <li><strong>Total Circulation:</strong> Sum of USD flowing through all structures involving the company</li>
+    </ul>
+  </div>
+</div>
+
+<div className="research-prose">
+
+The Hub Score captures systemic importance: companies with high Hub Scores are entangled in multiple
+reciprocal relationships. As established before this suggests that disruptions to these companies could propagate through several circular flows simultaneously causing effects across the entire dataset (market). 
+
+</div>
+
+### 3.6 Multi-Party Cycle Detection
+
+<div className="research-prose">
+
+While two-party loops capture direct reciprocal relationships, value may also circulate through
+longer chains that extend beyond direct exchanges. We extend the analysis to detect *multi-party cycles*: circular flows involving three to five companies. The upper bound of five reflects both analytical and computational considerations: cycles of length six or greater are unlikely to represent cohesive circular relationships given the network&apos;s size, and the number of candidate paths grows combinatorially with cycle length.
+
+Formally, a k-party cycle is an ordered sequence of k distinct
+companies (C₁, C₂, ..., Cₖ) such that directed edges exist connecting each consecutive pair
+and closing the loop:
+
+</div>
+
+<div className="research-code">
+  Cycle(C₁, ..., Cₖ) = ∃ edges e₁, ..., eₖ : eᵢ connects Cᵢ → Cᵢ₊₁ (mod k)
+</div>
+
+<div className="research-prose">
+
+Detection is performed using depth-first search (DFS) from each node, following Tarjan&apos;s (1972)
+foundational algorithm for graph traversal. The paper explores paths up to length k and checks for edges
+that return to the starting node. To avoid counting the same cycle multiple times from different
+starting points, the paper canonicalizes cycle identifiers by selecting the lexicographically smallest
+rotation of company slugs, a standard technique in cycle enumeration (Johnson, 1975).
+
+</div>
+
+<div className="research-definition">
+  <p className="research-definition-title">Definition: Cycle Score</p>
+  <p className="research-formula">
+    S(cycle) = 0.30·F + 0.25·B + 0.10·M + 0.20·C + 0.15·L
+  </p>
+  <p className="research-definition-note">where:</p>
+  <div className="research-definition-item">
+    <p className="research-definition-item-title">Flow Coherence (F)</p>
+    <p className="research-definition-item-text">
+      F = 1.0 if the cycle contains at least two distinct flow types from different economic categories (monetary: MONEY, EQUITY; non-monetary: SERVICE, COMPUTE_HARDWARE), indicating that value circulates through qualitatively different channels. F = 0.7 if all edges share a single flow type (e.g., all MONEY), indicating uniform circularity. F = 0.5 if edges exhibit multiple flow types that fall within the same economic category (e.g., MONEY and EQUITY are both financial flows), reflecting diversity without cross-category complementarity.
+    </p>
+  </div>
+  <div className="research-definition-item">
+    <p className="research-definition-item-title">Value Balance (B)</p>
+    <p className="research-definition-item-text">
+      B = 1 − log₁₀(max/min) / 3, clamped to [0, 1]
+    </p>
+    <p className="research-definition-item-note">
+      Uses logarithmic scaling since cycle values can span orders of magnitude. Perfect balance yields 1.0;
+      a 1000× difference yields 0. Consistent with Section 3.2, edges with undisclosed amounts (w = null) are excluded from both B and M calculations. B is computed over the subset of edges with known amounts; if fewer than two edges in the cycle have disclosed amounts, B defaults to 0.5 (the midpoint, reflecting uninformative data). M sums only disclosed edge amounts; if no edge in the cycle has a disclosed amount, M defaults to 0.
+    </p>
+  </div>
+  <div className="research-definition-item">
+    <p className="research-definition-item-title">Value Magnitude (M)</p>
+    <p className="research-definition-item-text">
+      M = (log₁₀(totalValue) − 6) / 6, clamped to [0, 1]
+    </p>
+    <p className="research-definition-item-note">
+      Scores based on total cycle value: $1M → 0, $1B → 0.5, $1T → 1.0
+    </p>
+  </div>
+  <div className="research-definition-item">
+    <p className="research-definition-item-title">Confidence (C)</p>
+    <p className="research-definition-item-text">
+      C = average confidence across all edges / 5
+    </p>
+  </div>
+  <div className="research-definition-item">
+    <p className="research-definition-item-title">Length Penalty (L)</p>
+    <p className="research-definition-item-text">
+      L = 1 / √(n − 1), where n is cycle length
+    </p>
+    <p className="research-definition-item-note">
+      Shorter cycles receive higher scores: 3-cycle → 0.71, 4-cycle → 0.58, 5-cycle → 0.50.
+      This reflects that tighter circular relationships are more indicative of coordinated behavior.
+    </p>
+  </div>
+</div>
+
+<div className="research-prose">
+
+The weights chosen for the Cycle Score differ from the Loop Score to account for the structural properties of
+multi-party cycles. The length penalty (L) prioritizes shorter cycles, as a 3-company circular
+arrangement represents a tighter, more direct form of interdependence than longer chains.
+Value magnitude (M) receives reduced weight (0.10 vs 0.35 in loops) since multi-party cycles
+naturally increase the amount of value as it passes through edges. As with the Loop Score, these weights were selected heuristically; Section 6.3 demonstrates ranking robustness across alternative weighting specifications.
+
+</div>
+
+### 3.7 Null Model for Statistical Significance
+
+<div className="research-prose">
+
+A critical question in network analysis is whether observed patterns are actually statistically meaningful
+or merely caused due to network density. To address this, The paper uses the *configuration model* - a
+well-established null model in network science that generates random networks preserving the
+degree sequence of the original graph (Newman, 2010; Molloy &amp; Reed, 1995).
+
+</div>
+
+<div className="research-definition">
+  <p className="research-definition-title">Definition: Configuration Model</p>
+  <p className="research-definition-note">
+    Given a directed graph G = (V, E), the configuration model generates random graphs G&apos; with
+    identical in-degree and out-degree sequences. However, it randomises edge endpoints. This controls for
+    network density: a company with many deals will naturally appear in more loops by volume alone.
+    Crucially, the model asks: 
+    <em>&ldquo;If companies make the same number of deals, but the partners are chosen randomly, how many circular patterns would we expect?&rdquo;</em>
+  </p>
+</div>
+
+<div className="research-prose">
+
+**Algorithm.** The implementation uses the stub-matching variant
+with Fisher-Yates shuffling:
+
+</div>
+
+<div className="research-code">
+  <span className="research-code-comment">{'// Configuration Model Algorithm'}</span>{'\n'}
+  <span className="research-code-number">1.</span> Create outStubs = [source company for each edge in E]{'\n'}
+  <span className="research-code-number">2.</span> Create inStubs = [target company for each edge in E]{'\n'}
+  <span className="research-code-number">3.</span> Fisher-Yates shuffle inStubs (randomize target assignments){'\n'}
+  <span className="research-code-number">4.</span> Pair: newEdge[i] = (outStubs[i] → shuffled inStubs[i]){'\n'}
+  <span className="research-code-number">5.</span> Filter: remove self-loops (A → A){'\n'}
+  <span className="research-code-number">6.</span> Deduplicate: keep unique (from, to) pairs{'\n'}
+  <span className="research-code-number">7.</span> Count loops and cycles in randomized graph{'\n'}
+  <span className="research-code-number">8.</span> Repeat n times to build null distribution
+</div>
+
+<div className="research-prose">
+
+**What the null model preserves vs. randomizes:**
+
+</div>
+
+<div className="research-table-wrapper">
+  <table className="research-table">
+    <thead>
+      <tr>
+        <th>Preserved (Controlled)</th>
+        <th>Randomized (Varied)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Number of nodes (companies)</td>
+        <td>Who connects to whom</td>
+      </tr>
+      <tr>
+        <td>Number of edges (deals)</td>
+        <td>Specific partnerships formed</td>
+      </tr>
+      <tr>
+        <td>Each company&apos;s out-degree (deals initiated)</td>
+        <td>Which companies receive those deals</td>
+      </tr>
+      <tr>
+        <td>Each company&apos;s in-degree (deals received)</td>
+        <td>Which companies initiate those deals</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div className="research-prose">
+
+**Statistical inference.** The method runs 500 iterations of the
+configuration model, counting the loops and cycles in each randomized network. This generates a
+null distribution against which it compares the observed values. Statistical significance is assessed
+using z-scores (standard deviations from null mean) and two-tailed p-values derived from the
+normal approximation:
+
+</div>
+
+<div className="research-code" style={{ textAlign: 'center' }}>
+  z = (observed − μ<sub>null</sub>) / σ<sub>null</sub>{'\n'}
+  p = 2 × (1 − Φ(|z|))
+</div>
+
+<div className="research-prose">
+
+A p-value below 0.05 indicates the observed count is unlikely to arise by chance in a random
+network with the same degree sequence. This result would suggest that the pattern reflects genuine structural properties
+of the AI industry rather than network density artifacts.
+
+</div>
+
+</section>
+
+{/* ============================================================ */}
+{/* 4. RESULTS                                                    */}
+{/* ============================================================ */}
+
+<section className="research-section">
+
+## 4. Results
+
+### 4.1 Network Statistics
+
+<div className="research-prose">
+
+The constructed graph contains <TotalCompanies /> nodes and <EdgeCount /> directed edges.
+The detection algorithms have identified <TotalCircularStructures /> circular structures in total:
+
+</div>
+
+- **<LoopCount /> two-party loops** (bidirectional A↔B flows) with mean Loop Score of <MeanLoopScore />
+- **<CycleCount /> multi-party cycles** (3–5 company chains) with mean Cycle Score of <MeanCycleScore />
+
+<div className="research-prose">
+
+The prevalence of multi-party cycles (<CycleCount />) substantially exceeds two-party
+loops (<LoopCount />), indicating that circular value flows in the AI industry frequently
+traverse intermediary nodes rather than flowing directly between counterparties.
+
+</div>
+
+### 4.2 Detected Circular Flows
+
+<div className="research-prose">
+
+Table 2 presents the detected loops ranked by Loop Score. The detected loop score's cluster within a
+narrow band (0.78–0.85). This indicates that the detected loops are
+comparable in strength rather than dominated by a single outlier pair. The results show that Cloud providers
+and infrastructure companies appear in nearly every loop. This is consistent as they hold dual
+roles as both investors and service recipients. The highest-scoring loops show flow
+type diversity, different transaction types in each direction, and high source confidence.
+Crucially, a large portion of detected loops default to the minimum Balance Ratio of 0.50
+due to undisclosed monetary amounts on at least one edge. This shows that the loop score of these pairs are driven primarily by flow diversity and confidence rather than verifiable monetary symmetry.
+
+Transaction amounts in Table 2 reflect disclosed or projected totals and span varying
+time horizons. Multi-year cloud commitments and projected investment maximums are not
+annualized; readers should exercise caution when comparing amounts across deal types.
+
+</div>
+
+<LoopsTable />
+
+<NullModelSection />
+
+### 4.4 Case Studies
+
+<div className="research-prose">
+
+**Case 1: Microsoft–OpenAI (Score: 0.83).** Microsoft has invested
+an estimated $10 billion into OpenAI equity. OpenAI has also commited $250 billion to Microsoft
+Azure cloud services which was part of restructuring a cumulative multi-year
+obligation and not a single-period payment. This case study represents an example of
+investor-customer circularity. Equity flows from cloud provider to AI company, and cloud
+revenue flows back to the orginal cloud provider. The high score reflects cross-type flow diversity (money vs. services) and strong source confidence, despite the substantial asymmetry between investment and
+cloud commitment amounts.
+
+**Case 2: NVIDIA–xAI (Score: 0.78).** NVIDIA invested
+$2 billion in xAI. xAI then committed and purchased an estimated $20 billion in NVIDIA GPUs for its
+Colossus 2 supercomputer. This is another clean investor-customer loop: equity flows from hardware
+manufacturer to AI company, and hardware purchase revenue flows back. The relationship
+is a perfect example of Acemoglu et al.&apos;s (2012) supply chain propagation mechanism: a shock to NVIDIA would impair xAI&apos;s infrastructure buildout, while reduced xAI demand
+would affect NVIDIA&apos;s revenue. This would create a feedback loop that propagates.
+
+**Case 3: Google–Anthropic (Score: 0.80).** Google invested $5.3 billion
+in Anthropic across multiple rounds of investment. Anthropic then committed to an estimated tens
+of billions of dollars in Google Cloud spending. Note that the precise figure has not been
+publicly confirmed. Similar patterns exist with Amazon&apos;s $8 billion
+Anthropic investment and further AWS cloud commitments. This competing investment
+structure: where rival cloud providers invest in the same AI companies creates parallel
+circular flows through a common node. The Loop Score reflects cross-type flow diversity and high source confidence, though the Balance Ratio defaults to 0.50 due to the undisclosed cloud commitment amount, consistent with the pattern noted in Section 4.2.
+
+</div>
+
+### 4.5 Hub Analysis
+
+<div className="research-prose">
+
+Table three displays companies ranked by their Hub Scores. It aims to quantify their systemic centrality in the
+circular flow network. Companies with higher Hub Scores participate in more or have stronger circular relationships.
+
+</div>
+
+<HubScoreTable />
+
+<div className="research-prose">
+
+<TopHubProse />
+
+We also see from the table that NVIDIA occupies a unique structural position: it simultaneously serves as hardware supplier (GPUs to cloud providers), equity investor (stakes in xAI, OpenAI, and others), and
+customer (renting cloud capacity). This multi-role centrality suggests that NVIDIA&apos;s
+financial performance is very much interconnected with the broader AI ecosystem. Microsoft
+and Anthropic also rank highly, showing that they all occupy central roles as cloud provider-investor
+and multi-cloud investee respectively.
+
+</div>
+
+### 4.6 Multi-Party Cycles
+
+<div className="research-prose">
+
+Beyond two-party loops, the paper also considers <CycleCount /> multi-party cycles involving three
+or more companies. Table 4 displays the highest-scoring cycles, which reveal more complex
+patterns of circular value flow.
+
+</div>
+
+<CyclesTable />
+
+<div className="research-prose">
+
+Several patterns can be seen from the multi-party cycle analysis. First, NVIDIA appears in the
+majority of high-scoring cycles. This shows its role as a critical intermediary: companies
+pay NVIDIA for hardware, NVIDIA invests in cloud providers, and those providers sell services
+back to the original hardware purchasers. Second, cycles involving AI model companies
+(OpenAI, Anthropic) often include both their cloud providers (Microsoft, Google, Amazon) and
+the hardware suppliers (NVIDIA), creating triangular dependencies between the providers and companies. 
+
+The existence of <CycleCount /> multi-party cycles, substantially exceeding the <LoopCount /> two-party loops, suggests that circular value flows in the AI industry are
+frequently mediated by intermediary nodes. This has some implications for systemic risk: disruptions
+to hub nodes like NVIDIA could simultaneously affect multiple circular flows of varying lengths.
+
+</div>
+
+</section>
+
+{/* ============================================================ */}
+{/* 5. DISCUSSION                                                 */}
+{/* ============================================================ */}
+
+<section className="research-section">
+
+## 5. Discussion
+
+### 5.1 Interpretation
+
+<div className="research-prose">
+
+The circular patterns the paper documents are not inherently problematic. Vertical integration,
+strategic partnerships, and reciprocal business relationships are all very common features of current technology industries. Cloud providers who invest in AI companies who then become cloud customers could simply be
+rational customer acquisition strategy. This is consistent with Rochet &amp; Tirole&apos;s (2003) two-sided
+market framework, where companies aim to subsidize one side to capture value from the other. Furthermore, hardware
+companies that invest in infrastructure providers naturally creates more demand for their hardware products.
+
+However, the scale and prevalence of these patterns in the AI industry and the size of
+the Loop Scores the paper computes suggests that analysts should consider circularity when evaluating
+company financials and markets. The patterns the paper outlines concerns raised by Gordon et al. (2004)
+regarding related party transactions. When revenue is dependant from entities in
+which a company also shares equity relationships, traditional financial statement analysis requires
+adjustments.
+
+A crucial finding from the null model analysis (Section 4.3) is the large difference between
+two-party loop significance and multi-party cycle significance. Two-party loops are highly
+significant as the observed 7 loops greatly exceed the null
+expectation of 2.77 under the configuration model. However, the 28 observed multi-party
+cycles do not have much statistical significance (z = 1.25, p = 0.21), despite exceeding
+the null mean of 15.66 by 79%.
+
+This divergence between two party loops and multi party cycles has several interpretations. First, it may reflect a genuine structural
+property of the AI deal network: companies deliberately form tight, bilateral reciprocal
+relationships (investor becomes customer, and vice versa), but the longer chains that
+creates multi-party cycles are formed as coincidental byproducts of network density rather than
+intentional circular structuring by firms. Under this interpretation, the two-party loop is the
+primary unit of circular behavior, and multi-party cycles are secondary.
+
+It can also be understood that the divergence may be a statistical artifact of the cycle null distribution&apos;s
+high variance (SD = 9.89 relative to a mean of 15.66, yielding a coefficient of variation
+of 0.63). Longer cycles are combinatorially sensitive to random edge placement: small
+changes in which companies are connected can produce large swings in cycle counts. This
+dispersion makes it inherently difficult to establish statistical significance for
+multi-party structures, even when observed counts meaningfully exceed the null mean. To mitigate this, a
+larger dataset or a more constrained null model may resolve whether the cycle count is genuinely elevated.
+
+Finally, the two metrics may capture different aspects of circularity. Two-party loops
+detect direct reciprocity;the simplest and most unambiguous form of circular flow.
+Multi-party cycles however, detect systemic connection, which is valuable for risk
+assessment but may not require statistical significance to be analytically meaningful.
+The 28 detected cycles still represent concrete pathways through which value circulates
+among AI companies; whether they exceed random expectation is a separate question from
+whether they matter for systemic risk.
+
+</div>
+
+### 5.2 Implications
+
+<div className="research-prose">
+
+The findings have several implications:
+
+</div>
+
+- **Revenue Recognition Analysis:** When Company A invests in Company B, and B commits to purchasing services from A, analysts should distinguish between &ldquo;organic&rdquo; revenue growth and revenue derived from investees. The Loop Score provides a quantitative signal for identifying such relationships.
+- **Valuation Interdependence:** Companies with high Loop Scores may exhibit correlated valuation dynamics. A decline in Company B&apos;s valuation could affect A&apos;s investment. This can potentially trigger reduced cloud spending, which affects A&apos;s revenue. This would establish a feedback loop.
+- **Disclosure Considerations:** Multi-year cloud commitments often exceed disclosed investment amounts but receive less granular disclosure. The finding that cloud commitments substantially exceed equity investments suggests potential information asymmetry.
+- **Network Prominence:** The concentration of circular flows around hub nodes is quantified by the Hub Score. Companies with high Hub Scores (particularly Microsoft, NVIDIA, and Anthropic) participate in multiple circular relationships within the sample. This suggests that these entities occupy prominent positions in the disclosed deal network that may warrant closer monitoring. The Hub Score provides a metric for identifying such central entities.
+
+### 5.3 Comparison with Prior Work
+
+<div className="research-prose">
+
+The paper's findings parallel and diverge from prior financial network analyses. Unlike Gai &amp;
+Kapadia&apos;s (2010) interbank networks, where linkages are homogeneous (lending relationships),
+AI deal networks exhibit heterogeneous edge types—equity, services, and hardware flow through
+the same nodes simultaneously. This multi-layer structure means that a company can be a creditor
+(investor), debtor (cloud customer), and supplier all within a singular relationship. This complicates the
+contagion dynamics that Allen &amp; Gale (2000) modeled for single-layer networks.
+
+The Hub Score can be used to extent Acemoglu et al.&apos;s (2012) centrality measure by incorporating participation
+across circular structures rather than counting direct connections. While Acemoglu et al. shows
+that shocks to central nodes propagate downstream, the AI network&apos;s circular topology means
+that shocks can return to their origin. NVIDIA&apos;s difficulties could impair xAI (as both
+investor and GPU supplier), whose decreased infrastructure spending impacts NVIDIA&apos;s revenue,
+while simultaneously affecting OpenAI&apos;s Azure consumption which impacts Microsoft, which may
+then reduce investment in NVIDIA-dependent startups.
+
+Dechow et al. (2011) used financial ratios to identify accounting misstatements. The Loop
+Score applies a similar logic to deal structures: rather than examining financial statements,
+it flags company pairs that exchange value in both directions. A high Loop Score does not
+indicate fraud, but it identifies the relationships most likely to raise the related-party
+concerns documented by Gordon et al. (2004).
+
+Traditional venture capital networks, as studied by Hochberg et al. (2007), involve investors
+who co-invest but rarely transact with their portfolio companies beyond providing capital.
+The AI deal network differs in that cloud providers serve as investors, customers, and
+infrastructure suppliers to the same companies simultaneously. This overlap of roles creates
+tighter interdependencies, which may explain why AI company valuations appear more correlated
+than those in traditional VC portfolios.
+
+</div>
+
+### 5.4 Methodological Contributions
+
+<div className="research-prose">
+
+The Loop Score is this paper&apos;s primary contribution. It is the only metric whose results
+are statistically significant (z = 3.41, p &lt; 0.001), and it provides a simple, repeatable
+way to flag investor-customer pairs with reciprocal flows that may warrant closer scrutiny.
+
+The Cycle Score and Hub Score serve supporting roles. The Cycle Score detects longer circular
+chains (3–5 companies); the <CycleCount /> detected cycles, while not statistically
+significant, identify real pathways through which value flows beyond direct counterparties.
+The Hub Score sums a company&apos;s participation across all circular structures to measure how
+central it is to the network. Together: the Loop Score shows where reciprocity is strongest,
+the Cycle Score shows how value moves through intermediaries, and the Hub Score shows which
+companies are most involved. All three metrics&apos; weights can be adjusted for different uses.
+
+</div>
+
+</section>
+
+{/* ============================================================ */}
+{/* 6. LIMITATIONS AND FUTURE WORK                               */}
+{/* ============================================================ */}
+
+<section className="research-section">
+
+## 6. Limitations and Future Work
+
+### 6.1 Data Limitations
+
+- **Incomplete Disclosure:** A large limitation of the study is that many deal amounts are estimated from press reports instead of official filings. Cloud commitments are frequently reported as ranges or simply quoted to be &ldquo;multi-billion&rdquo; figures. The paper aimed to address this through the implementation of the confidence score, but measurement errors are bound to remain. At the loop level, a large portion of detected two-party loops include at least one edge with no disclosed monetary amount. This causes the Balance Ratio to default to 0.5 and reducing the discriminatory power of the Loop Score for those pairs.
+- **Non-Random Sample Selection:** The dataset itself comprises of purposefully selected major AI companies, not a random sample of the industry. Companies were included based on market prominence and deal activity visibility. This means: (a) the paper can describe patterns among these specific firms but cannot make generalized claims within in the broader AI ecosystem; (b) statistical tests compare observations to random graph baselines rather than testing population hypotheses; (c) smaller companies and private deals are underrepresented and is a systemic flaw. The findings should be interpreted as &ldquo;major AI companies exhibit circular deal patterns&rdquo; rather than &ldquo;circular patterns are statistically significant within the AI industry as a whole.&rdquo;
+- **Temporal Clustering:** Most deals within dataset are from 2022–2026, reflecting the recent AI infrastructure buildout. Earlier patterns may differ, limiting historical comparison.
+
+### 6.2 Methodological Limitations
+
+- **Cycle Length Cap:** The multi-party cycle detection is limited to cycles of length 5 or fewer. Longer chains are not captured, though such extended cycles are likely rare given the industry&apos;s structure.
+- **Static Analysis:** The paper analyzed a snapshot of the deal network. Temporal dynamics: how loops form, strengthen, or dissolve over time - are not addressed within this paper.
+- **Cycle Overlap:** A single deal may participate in multiple cycles, potentially inflating Hub Scores for companies involved in densely connected regions of the graph. The paper counts each structure independently, which may overweight certain network positions.
+
+### 6.3 Weight Sensitivity Analysis
+
+<div className="research-prose">
+
+The Loop Score weights (α=0.35, β=0.35, γ=0.30) and Cycle Score weights were determined
+heuristically. To assess robustness, all scoring calculations were re-ran under five alternative
+weighting schemes and compared the resulting rankings.
+
+</div>
+
+<SensitivityLoopTable />
+
+<SensitivityHubTable />
+
+<StabilityCallout />
+
+### 6.4 Scope of Claims
+
+<div className="research-prose">
+
+**This paper establishes:**
+
+</div>
+
+- A replicable methodology for detecting and scoring circular patterns in corporate deal networks
+- That major AI companies in the sample have documented reciprocal deal relationships
+- That infrastructure providers (particularly NVIDIA) participate in diverse deal types across the sample
+- Potential starting points for deeper regulatory and analyst review of specific relationships
+
+<div className="research-prose">
+
+**This paper does not establish:**
+
+</div>
+
+- Whether these patterns are abnormal relative to other industries (requires baseline comparison)
+- Whether circular deals cause valuation interdependence (requires causal analysis)
+- Population-level prevalence of circularity in the AI industry (requires random sampling)
+- Systemic risk levels or contagion probabilities (requires econometric stress-testing)
+
+### 6.5 Future Directions
+
+<div className="research-prose">
+
+Future work could extend this analysis by: 
+(1) incorporating temporal dynamics to study how
+circular structures form, strengthen, and dissolve over time; 
+(2) developing causal inference
+methods to assess whether circularity affects financial outcomes; 
+(3) applying the methodology
+to historical technology sectors for baseline comparison; 
+(4) exploring weighted cycle detection
+that accounts for edge importance rather than treating all edges equally; 
+(5) developing real-time
+monitoring systems that flag emerging circular patterns as deals are announced.
+
+</div>
+
+</section>
+
+{/* ============================================================ */}
+{/* 7. CONCLUSION                                                 */}
+{/* ============================================================ */}
+
+<section className="research-section">
+
+## 7. Conclusion
+
+<div className="research-prose">
+
+This paper has presented a methodology for quantifying circularity in corporate deal networks
+and applied it to the AI industry (2022-2026). Three metrics were introduced: the Loop Score for two-party
+bidirectional flows, the Cycle Score for multi-party circular chains, and the Hub Score for
+identifying systemically central entities. Analyzing <TotalDeals /> publicly reported deals
+among <TotalCompanies /> companies, the paper identified <TotalCircularStructures /> circular
+structures: <LoopCount /> two-party loops and <CycleCount /> multi-party cycles.
+
+The central finding is that two-party loops: direct reciprocal relationships between
+investor-customer pairs&mdash;occur at rates that significantly exceed random expectation
+(z = 3.41, p &lt; 0.001). These bilateral circular patterns are a
+statistically significant structural feature of the AI deal network, not merely an artifact
+of network density. The <CycleCount /> detected multi-party cycles, while not statistically
+significant against the null model, identify additional pathways through which value
+circulates among companies via intermediary nodes.
+
+Infrastructure providers - particularly Microsoft and NVIDIA - occupy central positions
+in these circular flows, serving simultaneously as investors, cloud providers, and customers
+within the same network. The Hub Score quantifies this centrality, highlighting the companies
+whose disruption could affect multiple circular flows simultaneously.
+
+The paper does not claim these patterns constitute market manipulation or indicate a
+&ldquo;bubble&rdquo; in any technical sense. Such determinations would require causal analysis
+beyond the scope of this study. Rather, the paper provides tools for analysts,
+regulators, and researchers to identify and quantify circular relationships that may warrant
+closer examination.
+
+</div>
+
+</section>
+
+{/* ============================================================ */}
+{/* INTERACTIVE EXPLORER                                          */}
+{/* ============================================================ */}
+
+<section className="research-explorer">
+  <h2 className="research-explorer-title">Interactive Data Explorer</h2>
+  <p className="research-explorer-text">
+    The full dataset and network visualization are available in our interactive explorer.
+    Examine deal details, sources, and Loop Scores for any company pair.
+  </p>
+  <div className="research-explorer-buttons">
+    <Link
+      href="/graph?companies=openai,microsoft,nvidia&caseStudy=triangle"
+      className="research-btn research-btn-primary"
+    >
+      Case 1: OpenAI-Microsoft-NVIDIA
+    </Link>
+    <Link
+      href="/graph?companies=nvidia,xai&caseStudy=nvidia-xai"
+      className="research-btn research-btn-secondary"
+    >
+      Case 2: NVIDIA-xAI
+    </Link>
+    <Link
+      href="/graph?companies=amazon,google,anthropic&caseStudy=anthropic-war"
+      className="research-btn research-btn-secondary"
+    >
+      Case 3: Anthropic
+    </Link>
+    <Link
+      href="/graph"
+      className="research-btn research-btn-secondary"
+    >
+      Full Network
+    </Link>
+  </div>
+</section>
+
+{/* ============================================================ */}
+{/* REFERENCES                                                    */}
+{/* ============================================================ */}
+
+<section className="research-references">
+  <h2 className="research-h2" style={{ borderBottom: 'none', paddingBottom: 0 }}>References</h2>
+  <div style={{ marginTop: '1rem' }}>
+    <p className="research-reference">
+      Acemoglu, D., Carvalho, V. M., Ozdaglar, A., &amp; Tahbaz-Salehi, A. (2012). The network origins of aggregate fluctuations. <em>Econometrica</em>, 80(5), 1977–2016.
+    </p>
+    <p className="research-reference">
+      Aitken, M., Cumming, D., &amp; Zhan, F. (2015). High frequency trading and end-of-day price dislocation. <em>Journal of Banking &amp; Finance</em>, 59, 330–349.
+    </p>
+    <p className="research-reference">
+      Allen, F., &amp; Gale, D. (2000). Financial contagion. <em>Journal of Political Economy</em>, 108(1), 1–33.
+    </p>
+    <p className="research-reference">
+      CB Insights. (2024). State of AI Report 2024. CB Insights Research.
+    </p>
+    <p className="research-reference">
+      Dechow, P. M., Ge, W., Larson, C. R., &amp; Sloan, R. G. (2011). Predicting material accounting misstatements. <em>Contemporary Accounting Research</em>, 28(1), 17–82.
+    </p>
+    <p className="research-reference">
+      Gai, P., &amp; Kapadia, S. (2010). Contagion in financial networks. <em>Proceedings of the Royal Society A</em>, 466(2120), 2401–2423.
+    </p>
+    <p className="research-reference">
+      Gordon, E. A., Henry, E., &amp; Palia, D. (2004). Related party transactions and corporate governance. <em>Advances in Financial Economics</em>, 9, 1–27.
+    </p>
+    <p className="research-reference">
+      Hochberg, Y. V., Ljungqvist, A., &amp; Lu, Y. (2007). Whom you know matters: Venture capital networks and investment performance. <em>Journal of Finance</em>, 62(1), 251–301.
+    </p>
+    <p className="research-reference">
+      Johnson, D. B. (1975). Finding all the elementary circuits of a directed graph. <em>SIAM Journal on Computing</em>, 4(1), 77–84.
+    </p>
+    <p className="research-reference">
+      Mizruchi, M. S. (1996). What do interlocks do? An analysis, critique, and assessment of research on interlocking directorates. <em>Annual Review of Sociology</em>, 22(1), 271–298.
+    </p>
+    <p className="research-reference">
+      Ofek, E., &amp; Richardson, M. (2003). DotCom mania: The rise and fall of internet stock prices. <em>Journal of Finance</em>, 58(3), 1113–1137.
+    </p>
+    <p className="research-reference">
+      Rochet, J. C., &amp; Tirole, J. (2003). Platform competition in two-sided markets. <em>Journal of the European Economic Association</em>, 1(4), 990–1029.
+    </p>
+    <p className="research-reference">
+      Rochet, J. C., &amp; Tirole, J. (2006). Two-sided markets: A progress report. <em>RAND Journal of Economics</em>, 37(3), 645–667.
+    </p>
+    <p className="research-reference">
+      Sevilla, J., Heim, L., Ho, A., Besiroglu, T., Hobbhahn, M., &amp; Villalobos, P. (2022). Compute trends across three eras of machine learning. <em>arXiv preprint arXiv:2202.05924</em>.
+    </p>
+    <p className="research-reference">
+      Stanford HAI. (2024). Artificial Intelligence Index Report 2024. Stanford University Human-Centered Artificial Intelligence.
+    </p>
+    <p className="research-reference">
+      Tarjan, R. (1972). Depth-first search and linear graph algorithms. <em>SIAM Journal on Computing</em>, 1(2), 146–160.
+    </p>
+    <p className="research-reference">
+      Vipra, J., &amp; Korinek, A. (2023). Market concentration implications of foundation models. <em>Brookings Institution Working Paper</em>.
+    </p>
+  </div>
+</section>
+
+{/* ============================================================ */}
+{/* CITATION                                                      */}
+{/* ============================================================ */}
+
+<section className="research-citation">
+  <p className="research-citation-label">Cite This Paper</p>
+  <div className="research-citation-box">
+    <p>AI Bubble Map. (2025). Quantifying Circularity in AI Industry Deal Networks: A Graph-Based Analysis of Investment and Service Flows. <em>Working Paper</em>. Retrieved from https://aibubblemap.com/research</p>
+  </div>
+  <p className="research-bibtex-label">BibTeX:</p>
+  <pre className="research-bibtex">{`@article{aibubblemap2025circularity,
+  title={Quantifying Circularity in AI Industry Deal Networks:
+         A Graph-Based Analysis of Investment and Service Flows},
+  author={{AI Bubble Map}},
+  journal={Working Paper},
+  year={2025},
+  url={https://aibubblemap.com/research}
+}`}</pre>
+</section>
+
+</article>
+</main>
+
+{/* ============================================================ */}
+{/* FOOTER                                                        */}
+{/* ============================================================ */}
+
+<footer className="research-footer">
+  <p className="research-footer-text">
+    Data compiled from SEC filings, press releases, and financial news reporting.
+    Last updated January 2025.
+  </p>
+  <p className="research-footer-text">
+    This is an independent research project. Not financial advice.
+  </p>
+</footer>

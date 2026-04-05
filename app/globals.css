@@ -852,6 +852,7 @@ h4 { font-size: 1rem; }
   line-height: 1.6;
   color: var(--research-text-muted);
   overflow-x: auto;
+  white-space: pre-wrap;
   transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 

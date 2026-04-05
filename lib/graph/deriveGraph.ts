@@ -775,9 +775,12 @@ function recalculateWithScheme(
   nodes: NodeDTO[],
   scheme: WeightingScheme
 ): { loops: LoopDTO[]; cycles: MultiPartyCycleDTO[]; hubs: HubScoreDTO[] } {
+  // Exclude non-directional edges (partnerships) — same as detectLoops/detectMultiPartyCycles
+  const directionalEdges = edges.filter(e => e.isDirectional);
+
   // Recalculate loops with custom weights
   const edgeMap = new Map<string, EdgeDTO>();
-  for (const edge of edges) {
+  for (const edge of directionalEdges) {
     const key = `${edge.from}→${edge.to}`;
     const existing = edgeMap.get(key);
     if (!existing || (edge.totalAmountUSD ?? 0) > (existing.totalAmountUSD ?? 0)) {
@@ -789,7 +792,7 @@ function recalculateWithScheme(
   const seen = new Set<string>();
   const nodeMap = new Map(nodes.map(n => [n.id, n]));
 
-  for (const edge of edges) {
+  for (const edge of directionalEdges) {
     const reverseKey = `${edge.to}→${edge.from}`;
     const reverseEdge = edgeMap.get(reverseKey);
 
@@ -822,7 +825,7 @@ function recalculateWithScheme(
   loops.sort((a, b) => b.loopScore - a.loopScore);
 
   // Recalculate cycles with custom weights
-  const cycles = recalculateCyclesWithScheme(edges, nodes, scheme.cycleWeights);
+  const cycles = recalculateCyclesWithScheme(directionalEdges, nodes, scheme.cycleWeights);
 
   // Recalculate hub scores
   const hubs = calculateHubScores(loops, cycles, nodes);
