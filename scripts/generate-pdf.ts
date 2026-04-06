@@ -1,5 +1,5 @@
 import { execSync, spawn, type ChildProcess } from 'child_process';
-import { readFileSync, mkdirSync, existsSync } from 'fs';
+import { readFileSync, mkdirSync, existsSync, rmSync } from 'fs';
 import { join } from 'path';
 import puppeteer from 'puppeteer';
 
@@ -7,6 +7,17 @@ const ROOT = join(__dirname, '..');
 const OUTPUT_DIR = join(ROOT, 'output');
 const OUTPUT_FILE = join(OUTPUT_DIR, 'research-paper.pdf');
 const PRINT_CSS_PATH = join(ROOT, 'styles', 'research-print.css');
+const LOCK_FILE = join(ROOT, '.next', 'dev', 'lock');
+
+// ── Check if a server is already running ────────────────────────
+async function checkExistingServer(port: number): Promise<boolean> {
+  try {
+    const res = await fetch(`http://localhost:${port}/research`);
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
 
 // ── Port selection ──────────────────────────────────────────────
 function getRandomPort(): number {
@@ -101,9 +112,10 @@ async function buildTOCHTML(page: puppeteer.Page): Promise<string> {
 
 // ── Main ────────────────────────────────────────────────────────
 async function main() {
-  const port = getRandomPort();
-  const baseUrl = `http://localhost:${port}`;
+  let port: number;
+  let baseUrl: string;
   let server: ChildProcess | null = null;
+  let usingExistingServer = false;
 
   try {
     // Ensure output directory exists
@@ -114,30 +126,47 @@ async function main() {
     // Read the print stylesheet
     const printCSS = readFileSync(PRINT_CSS_PATH, 'utf-8');
 
-    // Start Next.js dev server
-    console.log(`Starting Next.js dev server on port ${port}...`);
-    server = spawn('npx', ['next', 'dev', '--port', String(port)], {
-      cwd: ROOT,
-      stdio: ['ignore', 'pipe', 'pipe'],
-      shell: true,
-    });
+    // Check if dev server is already running on port 3000
+    if (await checkExistingServer(3000)) {
+      console.log('Found existing dev server on port 3000, using it.');
+      port = 3000;
+      usingExistingServer = true;
+    } else {
+      port = getRandomPort();
 
-    server.stdout?.on('data', (data: Buffer) => {
-      const line = data.toString().trim();
-      if (line) console.log(`  [next] ${line}`);
-    });
-
-    server.stderr?.on('data', (data: Buffer) => {
-      const line = data.toString().trim();
-      if (line && !line.includes('ExperimentalWarning')) {
-        console.log(`  [next] ${line}`);
+      // Remove stale lock file if it exists
+      if (existsSync(LOCK_FILE)) {
+        console.log('Removing stale .next/dev/lock file...');
+        rmSync(LOCK_FILE, { force: true });
       }
-    });
 
-    // Wait for server
-    console.log('Waiting for server to be ready...');
-    await waitForServer(`${baseUrl}/research`, 60_000);
-    console.log('Server is ready.');
+      // Start Next.js dev server
+      console.log(`Starting Next.js dev server on port ${port}...`);
+      server = spawn('npx', ['next', 'dev', '--port', String(port)], {
+        cwd: ROOT,
+        stdio: ['ignore', 'pipe', 'pipe'],
+        shell: true,
+      });
+
+      server.stdout?.on('data', (data: Buffer) => {
+        const line = data.toString().trim();
+        if (line) console.log(`  [next] ${line}`);
+      });
+
+      server.stderr?.on('data', (data: Buffer) => {
+        const line = data.toString().trim();
+        if (line && !line.includes('ExperimentalWarning')) {
+          console.log(`  [next] ${line}`);
+        }
+      });
+
+      // Wait for server
+      console.log('Waiting for server to be ready...');
+      await waitForServer(`http://localhost:${port}/research`, 60_000);
+      console.log('Server is ready.');
+    }
+
+    baseUrl = `http://localhost:${port}`;
 
     // Launch Puppeteer
     console.log('Launching browser...');
@@ -206,8 +235,8 @@ async function main() {
     console.error('Error generating PDF:', err);
     process.exit(1);
   } finally {
-    // Kill the dev server
-    if (server) {
+    // Only kill the server if we started it
+    if (server && !usingExistingServer) {
       console.log('Shutting down dev server...');
       server.kill('SIGTERM');
       // On Windows, also try taskkill

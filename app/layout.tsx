@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI Bubble Map - Visualizing Circular Money Flows in the AI Industry",
+  title: "AI Deal Network - Visualizing Circular Money Flows in the AI Industry",
   description:
     "Interactive visualization of AI industry investments, partnerships, and circular capital flows. Track how billions flow between OpenAI, Microsoft, NVIDIA, and other tech giants. Is this the next tech bubble?",
   keywords: [
@@ -37,20 +37,20 @@ export const metadata: Metadata = {
     "AI overvaluation",
     "AI hype bubble",
   ],
-  authors: [{ name: "AI Bubble Map" }],
-  creator: "AI Bubble Map",
-  publisher: "AI Bubble Map",
+  authors: [{ name: "AI Deal Network" }],
+  creator: "AI Deal Network",
+  publisher: "AI Deal Network",
   openGraph: {
     type: "website",
     locale: "en_US",
-    siteName: "AI Bubble Map",
-    title: "AI Bubble Map - Visualizing Circular Money Flows in the AI Industry",
+    siteName: "AI Deal Network",
+    title: "AI Deal Network - Visualizing Circular Money Flows in the AI Industry",
     description:
       "Track how billions flow in circles between AI giants. Microsoft invests in OpenAI, OpenAI spends on Azure and NVIDIA, NVIDIA sells back to Microsoft. See the pattern.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "AI Bubble Map - Is AI the Next Tech Bubble?",
+    title: "AI Deal Network - Is AI the Next Tech Bubble?",
     description:
       "Interactive visualization showing how $350B+ flows in circles between AI companies. The same dollars keep changing hands.",
   },

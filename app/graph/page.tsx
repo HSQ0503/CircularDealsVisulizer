@@ -31,7 +31,7 @@ function GraphPageLoading() {
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-bg">
       <header className="flex-shrink-0 h-16 border-b border-border-subtle bg-surface/80 backdrop-blur-sm flex items-center px-6">
-        <span className="text-lg font-bold text-gradient">AI Bubble Map</span>
+        <span className="text-lg font-bold text-gradient">AI Deal Network</span>
       </header>
       <div className="flex-1 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
@@ -207,7 +207,7 @@ function GraphPageContent() {
         {/* Header */}
         <header className="flex-shrink-0 h-16 border-b border-border-subtle bg-surface/80 backdrop-blur-sm flex items-center justify-between px-6 relative z-20">
           <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <span className="text-lg font-bold text-gradient">AI Bubble Map</span>
+            <span className="text-lg font-bold text-gradient">AI Deal Network</span>
           </Link>
         </header>
 
@@ -327,7 +327,7 @@ function GraphPageContent() {
       <header className="flex-shrink-0 h-16 border-b border-border-subtle bg-surface/80 backdrop-blur-sm flex items-center justify-between px-6 relative z-20">
         {/* Brand */}
         <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-          <span className="text-lg font-bold text-gradient">AI Bubble Map</span>
+          <span className="text-lg font-bold text-gradient">AI Deal Network</span>
           {graphData && (
             <span className="text-xs text-text-faint bg-surface-2 px-2.5 py-1 rounded-full">
               {graphData.nodes.length} companies · {graphData.edges.length} connections

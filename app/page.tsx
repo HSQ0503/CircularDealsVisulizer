@@ -11,7 +11,7 @@ export default function Home() {
       <nav className="sticky top-0 z-50 border-b border-border-subtle bg-bg/80 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="text-lg font-bold text-gradient">
-            AI Bubble Map
+            AI Deal Network
           </Link>
           <div className="flex items-center gap-1">
             <Link

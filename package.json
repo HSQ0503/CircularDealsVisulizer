@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "generate-pdf": "tsx scripts/generate-pdf.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

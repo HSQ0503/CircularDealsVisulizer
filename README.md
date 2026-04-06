@@ -1,4 +1,4 @@
-# AI Bubble Map
+# AI Deal Network
 
 An interactive visualization tool for exploring circular financial flows between AI companies. Reveals how investments, cloud commitments, and supply deals create interconnected loops among major tech players.
 
