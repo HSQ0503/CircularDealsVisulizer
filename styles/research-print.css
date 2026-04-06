@@ -1,0 +1,478 @@
+/*
+ * Academic Print Stylesheet for Research Paper PDF
+ * Applied by generate-pdf.ts via Puppeteer style injection.
+ * Overrides globals.css research-* classes for print output.
+ */
+
+/* ── Force light/academic colors on all CSS variables ── */
+:root,
+[data-theme="dark"] {
+  --research-bg: #ffffff;
+  --research-bg-alt: #ffffff;
+  --research-surface: #ffffff;
+  --research-surface-hover: #ffffff;
+  --research-surface-2: #f9f9f9;
+  --research-text: #000000;
+  --research-text-secondary: #000000;
+  --research-text-muted: #333333;
+  --research-text-faint: #555555;
+  --research-border: #000000;
+  --research-border-subtle: #999999;
+  --research-accent: #000000;
+  --research-accent-muted: #000000;
+  --research-link: #000000;
+  --research-link-hover: #000000;
+  --research-success: #000000;
+  --research-warning: #000000;
+  --research-callout-bg: #f5f5f5;
+  --research-callout-border: #000000;
+  --research-table-header-bg: #f0f0f0;
+  --research-table-row-alt: #ffffff;
+  --research-code-bg: #f5f5f5;
+}
+
+/* ── Base page styles ── */
+body, .research-page {
+  background: #ffffff !important;
+  color: #000000 !important;
+  font-family: "Times New Roman", Times, serif !important;
+  font-size: 12pt !important;
+  line-height: 1.5 !important;
+}
+
+/* ── Remove max-width constraint so content fills the page ── */
+main {
+  max-width: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+article {
+  max-width: none !important;
+}
+
+/* ── Hide web-only elements ── */
+.research-header,
+.research-explorer,
+.research-footer,
+.research-nav-link,
+.research-theme-toggle,
+.research-back-link {
+  display: none !important;
+}
+
+/* ── Hide original title block (replaced by injected cover page) ── */
+.research-title-block {
+  display: none !important;
+}
+
+/* ── Hide original abstract (moved to cover page) ── */
+.research-abstract {
+  display: none !important;
+}
+
+/* ── Typography: Times New Roman everywhere ── */
+.research-prose,
+.research-abstract-text,
+.research-callout-text,
+.research-list,
+.research-reference,
+.research-citation-box,
+.research-keywords {
+  font-family: "Times New Roman", Times, serif !important;
+  font-size: 12pt !important;
+  line-height: 1.5 !important;
+  color: #000000 !important;
+}
+
+.research-prose p {
+  text-align: justify;
+  text-indent: 0;
+  margin-bottom: 0.8em;
+}
+
+/* ── Headings ── */
+.research-h1 {
+  font-family: "Times New Roman", Times, serif !important;
+  font-size: 18pt !important;
+  font-weight: 700 !important;
+  color: #000000 !important;
+  text-align: center;
+}
+
+.research-h1-subtitle {
+  font-family: "Times New Roman", Times, serif !important;
+  font-size: 14pt !important;
+  font-weight: 400 !important;
+  color: #000000 !important;
+  text-align: center;
+}
+
+.research-h2 {
+  font-family: "Times New Roman", Times, serif !important;
+  font-size: 14pt !important;
+  font-weight: 700 !important;
+  color: #000000 !important;
+  margin-top: 1.5em !important;
+  margin-bottom: 0.5em !important;
+  padding-bottom: 0 !important;
+  border-bottom: none !important;
+}
+
+.research-h3 {
+  font-family: "Times New Roman", Times, serif !important;
+  font-size: 12pt !important;
+  font-weight: 700 !important;
+  color: #000000 !important;
+  margin-top: 1.2em !important;
+  margin-bottom: 0.4em !important;
+}
+
+/* ── Sections ── */
+.research-section {
+  margin-bottom: 1.5em !important;
+}
+
+/* ── Callout boxes: simple bordered box ── */
+.research-callout {
+  background: #f5f5f5 !important;
+  border-left: 2pt solid #000000 !important;
+  border-radius: 0 !important;
+  padding: 0.75em 1em !important;
+  margin: 1em 0 !important;
+}
+
+.research-callout-label {
+  font-family: "Times New Roman", Times, serif !important;
+  font-size: 10pt !important;
+  font-weight: 700 !important;
+  color: #000000 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── Definition boxes ── */
+.research-definition {
+  background: #f9f9f9 !important;
+  border: 1pt solid #999999 !important;
+  border-radius: 0 !important;
+  padding: 0.75em 1em !important;
+  margin: 1em 0 !important;
+}
+
+.research-definition-title {
+  font-family: "Times New Roman", Times, serif !important;
+  font-size: 10pt !important;
+  font-weight: 700 !important;
+  color: #000000 !important;
+}
+
+.research-formula {
+  font-family: "Courier New", Courier, monospace !important;
+  font-size: 11pt !important;
+  color: #000000 !important;
+}
+
+.research-definition-note,
+.research-definition-item-title,
+.research-definition-item-text,
+.research-definition-item-note {
+  font-family: "Times New Roman", Times, serif !important;
+  color: #000000 !important;
+}
+
+.research-definition-item-title {
+  font-size: 11pt !important;
+  font-weight: 700 !important;
+}
+
+.research-definition-item-text {
+  font-size: 11pt !important;
+}
+
+.research-definition-item-note {
+  font-size: 10pt !important;
+  color: #333333 !important;
+}
+
+/* ── Tables: clean academic formatting ── */
+.research-table-wrapper {
+  background: #ffffff !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0.5em 0 !important;
+  margin: 1em 0 !important;
+}
+
+.research-table-caption {
+  font-family: "Times New Roman", Times, serif !important;
+  font-size: 10pt !important;
+  font-weight: 700 !important;
+  color: #000000 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  margin-bottom: 0.5em !important;
+}
+
+.research-table {
+  font-family: "Times New Roman", Times, serif !important;
+  font-size: 10pt !important;
+  border-collapse: collapse !important;
+  width: 100% !important;
+}
+
+.research-table th {
+  font-weight: 700 !important;
+  color: #000000 !important;
+  padding: 0.4em 0.6em !important;
+  border-top: 2pt solid #000000 !important;
+  border-bottom: 1pt solid #000000 !important;
+  background: #ffffff !important;
+}
+
+.research-table td {
+  color: #000000 !important;
+  padding: 0.3em 0.6em !important;
+  border-bottom: 0.5pt solid #cccccc !important;
+}
+
+.research-table tbody tr:last-child td {
+  border-bottom: 2pt solid #000000 !important;
+}
+
+.research-table-mono {
+  font-family: "Courier New", Courier, monospace !important;
+  font-size: 10pt !important;
+}
+
+.research-table-note {
+  font-family: "Times New Roman", Times, serif !important;
+  font-size: 9pt !important;
+  color: #333333 !important;
+}
+
+/* ── Score colors: all black in print ── */
+.research-score-high,
+.research-score-medium,
+.research-score-low {
+  color: #000000 !important;
+}
+
+/* ── Code blocks ── */
+.research-code {
+  background: #f5f5f5 !important;
+  border: 0.5pt solid #999999 !important;
+  border-radius: 0 !important;
+  font-family: "Courier New", Courier, monospace !important;
+  font-size: 9pt !important;
+  color: #000000 !important;
+}
+
+.research-code-comment {
+  color: #555555 !important;
+}
+
+.research-code-number {
+  color: #000000 !important;
+}
+
+/* ── Lists ── */
+.research-list {
+  font-family: "Times New Roman", Times, serif !important;
+  font-size: 12pt !important;
+  color: #000000 !important;
+}
+
+.research-list strong {
+  color: #000000 !important;
+}
+
+/* ── References ── */
+.research-references {
+  border-top: 1pt solid #000000 !important;
+}
+
+.research-reference {
+  font-family: "Times New Roman", Times, serif !important;
+  font-size: 10pt !important;
+  color: #000000 !important;
+  line-height: 1.4 !important;
+}
+
+/* ── Citation ── */
+.research-citation {
+  border-top: 1pt solid #000000 !important;
+}
+
+.research-citation-label {
+  font-family: "Times New Roman", Times, serif !important;
+  font-size: 10pt !important;
+  font-weight: 700 !important;
+  color: #000000 !important;
+}
+
+.research-citation-box {
+  background: #f5f5f5 !important;
+  border: 0.5pt solid #999999 !important;
+  border-radius: 0 !important;
+  font-family: "Times New Roman", Times, serif !important;
+  font-size: 10pt !important;
+  color: #000000 !important;
+}
+
+.research-bibtex-label {
+  font-family: "Times New Roman", Times, serif !important;
+  font-size: 9pt !important;
+  color: #333333 !important;
+}
+
+.research-bibtex {
+  background: #f5f5f5 !important;
+  border: 0.5pt solid #999999 !important;
+  border-radius: 0 !important;
+  font-family: "Courier New", Courier, monospace !important;
+  font-size: 8pt !important;
+  color: #000000 !important;
+}
+
+/* ── Labels ── */
+.research-label,
+.research-paper-label {
+  font-family: "Times New Roman", Times, serif !important;
+  color: #000000 !important;
+}
+
+.research-authors-name {
+  font-family: "Times New Roman", Times, serif !important;
+  color: #000000 !important;
+}
+
+/* ── Keywords ── */
+.research-keywords strong {
+  color: #000000 !important;
+}
+
+/* ── Injected Cover Page ── */
+.pdf-cover-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  text-align: center;
+  font-family: "Times New Roman", Times, serif;
+  page-break-after: always;
+}
+
+.pdf-cover-page h1 {
+  font-size: 22pt;
+  font-weight: 700;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+.pdf-cover-page .pdf-cover-subtitle {
+  font-size: 14pt;
+  font-weight: 400;
+  color: #333333;
+  margin-bottom: 2em;
+}
+
+.pdf-cover-page .pdf-cover-label {
+  font-size: 11pt;
+  font-weight: 400;
+  color: #555555;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-bottom: 2em;
+}
+
+.pdf-cover-page .pdf-cover-author {
+  font-size: 14pt;
+  margin-bottom: 0.3em;
+}
+
+.pdf-cover-page .pdf-cover-email {
+  font-size: 11pt;
+  color: #333333;
+  margin-bottom: 2em;
+}
+
+.pdf-cover-page .pdf-cover-date {
+  font-size: 11pt;
+  color: #555555;
+}
+
+.pdf-cover-abstract {
+  text-align: left;
+  max-width: 36em;
+  margin: 2em auto 0;
+  padding-top: 1.5em;
+  border-top: 1pt solid #000000;
+}
+
+.pdf-cover-abstract h2 {
+  font-family: "Times New Roman", Times, serif;
+  font-size: 12pt;
+  font-weight: 700;
+  margin-bottom: 0.5em;
+}
+
+.pdf-cover-abstract p {
+  font-family: "Times New Roman", Times, serif;
+  font-size: 11pt;
+  line-height: 1.5;
+  text-align: justify;
+}
+
+.pdf-cover-abstract .pdf-cover-keywords {
+  font-size: 10pt;
+  margin-top: 1em;
+  color: #333333;
+}
+
+/* ── Injected Table of Contents ── */
+.pdf-toc {
+  font-family: "Times New Roman", Times, serif;
+  page-break-after: always;
+  padding-top: 2em;
+}
+
+.pdf-toc h2 {
+  font-family: "Times New Roman", Times, serif;
+  font-size: 16pt;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 1.5em;
+}
+
+.pdf-toc-entry {
+  display: block;
+  font-size: 12pt;
+  line-height: 2;
+  color: #000000;
+  text-decoration: none;
+}
+
+.pdf-toc-entry.pdf-toc-h3 {
+  padding-left: 1.5em;
+  font-size: 11pt;
+  color: #333333;
+}
+
+/* ── Page break helpers ── */
+.pdf-page-break {
+  page-break-after: always;
+}
+
+/* ── Prevent awkward page breaks inside elements ── */
+.research-table-wrapper,
+.research-callout,
+.research-definition {
+  page-break-inside: avoid;
+}
+
+.research-h2,
+.research-h3 {
+  page-break-after: avoid;
+}
