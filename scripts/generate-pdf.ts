@@ -1,7 +1,7 @@
 import { execSync, spawn, type ChildProcess } from 'child_process';
 import { readFileSync, mkdirSync, existsSync, rmSync } from 'fs';
 import { join } from 'path';
-import puppeteer from 'puppeteer';
+import puppeteer, { type Page } from 'puppeteer';
 
 const ROOT = join(__dirname, '..');
 const OUTPUT_DIR = join(ROOT, 'output');
@@ -40,7 +40,7 @@ async function waitForServer(url: string, timeoutMs = 60_000): Promise<void> {
 }
 
 // ── Extract abstract text from the rendered page ────────────────
-async function getAbstractText(page: puppeteer.Page): Promise<string> {
+async function getAbstractText(page: Page): Promise<string> {
   return page.evaluate(() => {
     const el = document.querySelector('.research-abstract-text');
     return el?.textContent?.trim() ?? '';
@@ -48,7 +48,7 @@ async function getAbstractText(page: puppeteer.Page): Promise<string> {
 }
 
 // ── Extract keywords from the rendered page ─────────────────────
-async function getKeywordsText(page: puppeteer.Page): Promise<string> {
+async function getKeywordsText(page: Page): Promise<string> {
   return page.evaluate(() => {
     const el = document.querySelector('.research-keywords');
     return el?.textContent?.trim() ?? '';
@@ -75,7 +75,7 @@ function buildCoverPageHTML(abstractText: string, keywordsText: string): string 
 }
 
 // ── Build TOC from headings on the page ─────────────────────────
-async function buildTOCHTML(page: puppeteer.Page): Promise<string> {
+async function buildTOCHTML(page: Page): Promise<string> {
   const headings = await page.evaluate(() => {
     const results: { tag: string; text: string }[] = [];
     // Only get headings inside research-section and research-references
