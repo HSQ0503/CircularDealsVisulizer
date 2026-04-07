@@ -397,54 +397,7 @@ analysis in Section 6.3, demonstrating ranking robustness across alternative wei
 
 </div>
 
-### 3.5 Hub Score (Systemic Importance)
-
-<div className="research-prose">
-
-To quantify company-level centrality in circular flows, the paper defines the Hub Score as the sum of
-scores across all circular structures which includes both two-party loops and multi-party cycles - in which
-a company participates:
-
-</div>
-
-<div className="research-definition">
-  <p className="research-definition-title">Definition: Hub Score</p>
-  <p className="research-formula">
-    H(company) = Σ S(structure) for all circular structures containing company
-  </p>
-  <p className="research-definition-note">
-    Where S(structure) is the Loop Score for two-party loops or Cycle Score for multi-party cycles.
-    Companies with higher Hub Scores participate in more circular structures and/or stronger ones.
-    This aggregation across both structure types captures the full extent of a company&apos;s
-    entanglement in circular flows.
-  </p>
-  <div className="research-definition-item">
-    <p className="research-definition-item-title">Normalized Hub Score</p>
-    <p className="research-definition-item-text" style={{ fontFamily: 'ui-monospace, monospace' }}>
-      H<sub>norm</sub>(company) = H(company) / max(H)
-    </p>
-    <p className="research-definition-item-note">
-      Yields values in [0, 1], allowing comparison across networks of different sizes and densities.
-    </p>
-  </div>
-  <div className="research-definition-item">
-    <p className="research-definition-item-title">Supporting Metrics</p>
-    <ul style={{ fontSize: '0.75rem', color: 'var(--research-text-muted)', marginTop: '0.25rem', paddingLeft: '1.25rem' }}>
-      <li><strong>Structure Count:</strong> Total number of loops and cycles the company participates in</li>
-      <li><strong>Average Score:</strong> Mean score across all the company&apos;s circular structures</li>
-      <li><strong>Total Circulation:</strong> Sum of USD flowing through all structures involving the company</li>
-    </ul>
-  </div>
-</div>
-
-<div className="research-prose">
-
-The Hub Score captures systemic importance: companies with high Hub Scores are entangled in multiple
-reciprocal relationships. As established before this suggests that disruptions to these companies could propagate through several circular flows simultaneously causing effects across the entire dataset (market). 
-
-</div>
-
-### 3.6 Multi-Party Cycle Detection
+### 3.5 Multi-Party Cycle Detection
 
 <div className="research-prose">
 
@@ -527,6 +480,53 @@ multi-party cycles. The length penalty (L) prioritizes shorter cycles, as a 3-co
 arrangement represents a tighter, more direct form of interdependence than longer chains.
 Value magnitude (M) receives reduced weight (0.10 vs 0.35 in loops) since multi-party cycles
 naturally increase the amount of value as it passes through edges. As with the Loop Score, these weights were selected heuristically; Section 6.3 demonstrates ranking robustness across alternative weighting specifications.
+
+</div>
+
+### 3.6 Hub Score (Systemic Importance)
+
+<div className="research-prose">
+
+To quantify company-level centrality in circular flows, the paper defines the Hub Score as the sum of
+scores across all circular structures which includes both two-party loops and multi-party cycles - in which
+a company participates:
+
+</div>
+
+<div className="research-definition">
+  <p className="research-definition-title">Definition: Hub Score</p>
+  <p className="research-formula">
+    H(company) = Σ S(structure) for all circular structures containing company
+  </p>
+  <p className="research-definition-note">
+    Where S(structure) is the Loop Score for two-party loops (Section 3.4) or Cycle Score for
+    multi-party cycles (Section 3.5). Companies with higher Hub Scores participate in more
+    circular structures and/or stronger ones. This aggregation across both structure types
+    captures the full extent of a company&apos;s entanglement in circular flows.
+  </p>
+  <div className="research-definition-item">
+    <p className="research-definition-item-title">Normalized Hub Score</p>
+    <p className="research-definition-item-text" style={{ fontFamily: 'ui-monospace, monospace' }}>
+      H<sub>norm</sub>(company) = H(company) / max(H)
+    </p>
+    <p className="research-definition-item-note">
+      Yields values in [0, 1], allowing comparison across networks of different sizes and densities.
+    </p>
+  </div>
+  <div className="research-definition-item">
+    <p className="research-definition-item-title">Supporting Metrics</p>
+    <ul style={{ fontSize: '0.75rem', color: 'var(--research-text-muted)', marginTop: '0.25rem', paddingLeft: '1.25rem' }}>
+      <li><strong>Structure Count:</strong> Total number of loops and cycles the company participates in</li>
+      <li><strong>Average Score:</strong> Mean score across all the company&apos;s circular structures</li>
+      <li><strong>Total Circulation:</strong> Sum of USD flowing through all structures involving the company</li>
+    </ul>
+  </div>
+</div>
+
+<div className="research-prose">
+
+The Hub Score captures systemic importance: companies with high Hub Scores are entangled in multiple
+reciprocal relationships. As established before this suggests that disruptions to these companies could propagate through several circular flows simultaneously causing effects across the entire dataset (market). 
 
 </div>
 
