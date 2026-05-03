@@ -1,5 +1,29 @@
 # AI Circular Deals (aibubvis)
 
+## ⚠️ READ THIS FIRST: Project Knowledge Base
+
+Before making any changes, answering any non-trivial question, or proposing any plan, **read the Obsidian vault** at:
+
+```
+C:\Users\HSQ05\OneDrive\Desktop\CircularDealsVisulizar\
+```
+
+(Note: vault folder is spelled "Visulizar" with -ar; this codebase folder is "Visulizer" with -er. Both are intentional.)
+
+The vault is the source of truth for project narrative, decisions, history, and strategy. This `CLAUDE.md` covers implementation rules; the vault covers everything else.
+
+**Required reading flow before starting work:**
+
+1. Open `00 START HERE.md` for the project overview and reading order.
+2. If the task involves Professor Yan, the email exchange, or research strategy → read `05 Professor Yan.md` and `07 Forward Plan.md`.
+3. If the task involves the paper itself or methodology → read `02 The Paper.md` and `03 Methodology.md`.
+4. If the task involves the dataset, schema, or seed data → read `04 Dataset.md`.
+5. If the task involves an unresolved question or recent decision → read `08 Decisions and Rationale.md` and `10 Open Questions.md`.
+
+**When you make significant changes, update the vault.** If a decision is made, update `08 Decisions and Rationale.md`. If something is resolved, update `10 Open Questions.md`. If state changes (email sent, dataset arrives, etc.), update the relevant note. Keep the vault canonical, not append-only.
+
+The Claude memory at `~/.claude/projects/C--Dev-CircularDealsVisulizer/memory/` auto-loads in every session and points to the vault. Don't rely on it alone — it's just an index.
+
 ## Project Overview
 
 An interactive visualization tool for exploring interconnected investments, partnerships, and financial commitments in the AI industry. The app displays companies as nodes and deals (investments, cloud commitments, supply agreements) as directed edges, revealing circular flows of money, compute, and services between major tech players.
