@@ -31,7 +31,10 @@ function GraphPageLoading() {
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-bg">
       <header className="flex-shrink-0 h-16 border-b border-border-subtle bg-surface/80 backdrop-blur-sm flex items-center px-6">
-        <span className="text-lg font-bold text-gradient">AI Deal Network</span>
+        <Link href="/" className="ed-brand">
+          <span className="ed-brand-mark">∮</span>
+          <span className="ed-brand-text">AI Deal Network <em>— a research project</em></span>
+        </Link>
       </header>
       <div className="flex-1 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
@@ -206,9 +209,16 @@ function GraphPageContent() {
       <div className="h-screen flex flex-col overflow-hidden bg-bg">
         {/* Header */}
         <header className="flex-shrink-0 h-16 border-b border-border-subtle bg-surface/80 backdrop-blur-sm flex items-center justify-between px-6 relative z-20">
-          <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <span className="text-lg font-bold text-gradient">AI Deal Network</span>
+          <Link href="/" className="ed-brand">
+            <span className="ed-brand-mark">∮</span>
+            <span className="ed-brand-text">AI Deal Network <em>— a research project</em></span>
           </Link>
+          <nav className="hidden md:flex items-center gap-6 text-sm text-text-muted">
+            <Link href="/research" className="hover:text-text">Paper</Link>
+            <Link href="/case-studies" className="hover:text-text">Case Studies</Link>
+            <Link href="/methodology" className="hover:text-text">Methodology</Link>
+            <Link href="/about" className="hover:text-text">About</Link>
+          </nav>
         </header>
 
         {/* Selection screen */}
@@ -326,10 +336,11 @@ function GraphPageContent() {
       {/* Header */}
       <header className="flex-shrink-0 h-16 border-b border-border-subtle bg-surface/80 backdrop-blur-sm flex items-center justify-between px-6 relative z-20">
         {/* Brand */}
-        <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-          <span className="text-lg font-bold text-gradient">AI Deal Network</span>
+        <Link href="/" className="ed-brand">
+          <span className="ed-brand-mark">∮</span>
+          <span className="ed-brand-text">AI Deal Network <em>— a research project</em></span>
           {graphData && (
-            <span className="text-xs text-text-faint bg-surface-2 px-2.5 py-1 rounded-full">
+            <span className="ml-3 text-xs text-text-faint bg-surface-2 px-2.5 py-1 rounded-full">
               {graphData.nodes.length} companies · {graphData.edges.length} connections
             </span>
           )}
