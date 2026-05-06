@@ -2,6 +2,7 @@
 
 import { useRef, useCallback, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
+import type { ForceGraphMethods } from 'react-force-graph-2d';
 import type { NodeDTO, EdgeDTO } from '@/lib/graph/types';
 
 // Dynamically import ForceGraph2D to avoid SSR issues
@@ -54,8 +55,8 @@ interface GraphNode {
 
 interface GraphLink {
   id: string;
-  source: string;
-  target: string;
+  source: string | GraphNode;
+  target: string | GraphNode;
   edgeData: EdgeDTO;
   color: string;
   width: number;
@@ -169,7 +170,7 @@ export function GraphView({
   onBackgroundClick,
   presetPositions,
 }: GraphViewProps) {
-  const graphRef = useRef<any>(null);
+  const graphRef = useRef<ForceGraphMethods | undefined>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
   const [hoveredLinkId, setHoveredLinkId] = useState<string | null>(null);
@@ -328,7 +329,7 @@ export function GraphView({
   const graphData = { nodes: graphNodes, links: graphLinks };
 
   // Node canvas rendering with colorful gradient design
-  const paintNode = useCallback((node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
+  const paintNode = useCallback((node: unknown, ctx: CanvasRenderingContext2D, globalScale: number) => {
     const n = node as GraphNode;
     const isSelected = n.id === selectedNodeId;
     const label = n.name;
@@ -415,7 +416,7 @@ export function GraphView({
   }, [selectedNodeId]);
 
   // Handle node click
-  const handleNodeClick = useCallback((node: any) => {
+  const handleNodeClick = useCallback((node: unknown) => {
     const n = node as GraphNode;
     const originalNode = nodes.find(nd => nd.id === n.id);
     if (originalNode) {
@@ -424,7 +425,7 @@ export function GraphView({
   }, [nodes, onNodeClick]);
 
   // Handle link click
-  const handleLinkClick = useCallback((link: any) => {
+  const handleLinkClick = useCallback((link: unknown) => {
     const l = link as GraphLink;
     onEdgeClick(l.edgeData);
   }, [onEdgeClick]);
@@ -435,7 +436,7 @@ export function GraphView({
   }, [onBackgroundClick]);
 
   // Handle link hover
-  const handleLinkHover = useCallback((link: any, prevLink: any) => {
+  const handleLinkHover = useCallback((link: unknown) => {
     if (link) {
       const l = link as GraphLink;
       setHoveredLinkId(l.id);
@@ -479,7 +480,7 @@ export function GraphView({
   }, [tooltip.visible]);
 
   // Custom link canvas rendering with hover/selection/node-connection highlighting
-  const paintLink = useCallback((link: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
+  const paintLink = useCallback((link: unknown, ctx: CanvasRenderingContext2D, globalScale: number) => {
     const l = link as GraphLink;
     const isHovered = l.id === hoveredLinkId;
     const isSelected = l.id === selectedEdgeId;
@@ -605,16 +606,17 @@ export function GraphView({
         height={dimensions.height}
         backgroundColor="transparent"
         nodeCanvasObject={paintNode}
-        nodePointerAreaPaint={(node: any, color: string, ctx: CanvasRenderingContext2D) => {
+        nodePointerAreaPaint={(node: unknown, color: string, ctx: CanvasRenderingContext2D) => {
           // Use node's val for dynamic pointer area (matches node size + padding)
-          const radius = (node.val || 40) + 5;
+          const n = node as GraphNode;
+          const radius = (n.val || 40) + 5;
           ctx.beginPath();
-          ctx.arc(node.x || 0, node.y || 0, radius, 0, 2 * Math.PI);
+          ctx.arc(n.x || 0, n.y || 0, radius, 0, 2 * Math.PI);
           ctx.fillStyle = color;
           ctx.fill();
         }}
         linkCanvasObject={paintLink}
-        linkPointerAreaPaint={(link: any, color: string, ctx: CanvasRenderingContext2D) => {
+        linkPointerAreaPaint={(link: unknown, color: string, ctx: CanvasRenderingContext2D) => {
           // Create a much larger clickable area along the curved path
           const l = link as GraphLink;
           const source = typeof l.source === 'object' ? l.source : graphNodes.find(n => n.id === l.source);
@@ -645,7 +647,7 @@ export function GraphView({
           ctx.lineWidth = 20; // Much larger hit area
           ctx.stroke();
         }}
-        linkCurvature={(link: any) => (link as GraphLink).curvature}
+        linkCurvature={(link: unknown) => (link as GraphLink).curvature}
         onNodeClick={handleNodeClick}
         onLinkClick={handleLinkClick}
         onLinkHover={handleLinkHover}

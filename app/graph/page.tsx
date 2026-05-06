@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { GraphView } from '@/components/graph/GraphView';
 import { Sidebar } from '@/components/graph/Sidebar';
 import { GraphFilters } from '@/components/graph/GraphFilters';
-import { CompanySelector } from '@/components/graph/CompanySelector';
 import { getCaseStudyById } from '@/lib/caseStudies';
 import type { GraphResponse, NodeDTO, EdgeDTO } from '@/lib/graph/types';
 import { FlowType, DealType } from '@prisma/client';
